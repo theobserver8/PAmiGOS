@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import errno
 import telebot
 from time import sleep
 from os import remove
@@ -12,9 +13,8 @@ BOT_TOKEN = config['TOKEN']['PAmiGOSbot']
 BOT_INTERVAL = 1
 BOT_TIMEOUT = 20
 
-DEBUG = True
-directorioRaiz = '/Users/ingen/Documents/RepoGitK/PAmiGOS/'
-
+#directorioRaiz = '/Users/ingen/Documents/RepoGitK/PAmiGOS/'
+directorioRaiz = '/home/ec2-user/'
 dicc_borrado_evento = {}
 
 def bot_polling():
@@ -55,7 +55,7 @@ def listar_eventos(chatid):
     for filename in contenido:
         if filename.startswith(str(chatid) + '_'):
             nombreExtension = (filename.split('_', 1))[1] #Quito el chat id
-            nombre = (nombreExtension.split('.json'))[0] #Quito la extensión .json
+            nombre = nombreExtension[:-5] #Quito la extensión .json
             listado.append(nombre)
     return listado
 #--------------------------------------------------------------------------------------------------
@@ -77,7 +77,7 @@ def botactions(bot):
         texto += '\n\n<b>🚶🏼‍♂️ <u>AMIGOS</u> 🚶🏻‍♀️</b>: Amigos que pueden formar parte de ese evento.'
         texto += '\n\n<b>💶 <u>CALCULAR</u> 💶</b>: Muestra los pagos a realizar entre vosotros para ajustar las cuentas.'
         texto += '\n\nUsa este comando /inicio para empezar...'
-        msg = bot.send_message(message.chat.id, texto, parse_mode="html", reply_markup=botones)
+        bot.send_message(message.chat.id, texto, parse_mode="html", reply_markup=botones)
 
 
     @bot.message_handler(commands=['📝EVENTO📝'])
@@ -94,44 +94,44 @@ def botactions(bot):
         bot.register_next_step_handler(msg, crear_archivo)
 
     def crear_archivo(message):
-        markup = ForceReply()
         nombre = str(message.chat.id) + '_' + str(message.text)
         extension = '.json'
-        if not nombre.find(extension) == -1: #Protección si alguien escribe .json
-            bot.send_message(message.chat.id, 'Nombre inválido.',)
-            msg = bot.send_message(message.chat.id, 'Introduce un nombre distinto:', reply_markup=markup)
-            bot.register_next_step_handler(msg, crear_archivo)
-        path = directorioRaiz + '/BBDD/' + nombre + extension #Creo previamente una carpeta BBDD que almacenará los EVENTOS
+        path = directorioRaiz + '/BBDD/' + nombre + extension #Tengo previamente una carpeta BBDD que almacena los EVENTOS
         try:
-            f = open(path, "x")
-            msg = bot.send_message(message.chat.id, 'Evento <b>' + str(message.text) + '</b> creado!', parse_mode="html")
-            showButtons(bot, message.chat.id)
+            open(path, "x")
+            bot.send_message(message.chat.id, 'Evento <b>' + str(message.text) + '</b> creado!', parse_mode="html")
         except:
-            bot.send_message(message.chat.id, 'Ya existe ese evento.',)
-            msg = bot.send_message(message.chat.id, 'Introduce un nombre distinto:', reply_markup=markup)
-            bot.register_next_step_handler(msg, crear_archivo)
+            bot.send_message(message.chat.id, 'Ya existe ese evento.')
+        showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['VEReventos'])
     def ver_eventos(message):
         listado = listar_eventos(message.chat.id)
-        listado_lineas = ('\n - '.join(listado)) #Listado separado en líneas
-        msg = bot.send_message(message.chat.id, '<b>La lista de eventos es:</b>\n ' + '- ' + listado_lineas, parse_mode="html")
+        if len(listado):
+            listado_lineas = ('\n - '.join(listado)) #Listado separado en líneas
+            bot.send_message(message.chat.id, '<b>La lista de eventos es:</b>\n ' + '- ' + listado_lineas, parse_mode="html")
+        else:
+            bot.send_message(message.chat.id, '<b>La lista de eventos está vacia!</b>', parse_mode="html")
         showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['BORRARevento'])
     def borrar_evento(message):
         lista = listar_eventos(message.chat.id)
-        botones = ReplyKeyboardMarkup(resize_keyboard=True)
-        long_list = len(lista)
-        if long_list%2 == 0:
-            for n in range(0, long_list, 2):
-                botones.add(lista[n], lista[n+1])
+        if len(lista):
+            botones = ReplyKeyboardMarkup(resize_keyboard=True)
+            long_list = len(lista)
+            if long_list%2 == 0:
+                for n in range(0, long_list, 2):
+                    botones.add(lista[n], lista[n+1])
+            else:
+                for n in range(0, long_list-1, 2):
+                    botones.add(lista[n], lista[n+1])
+                botones.add(lista[long_list-1])
+            msg = bot.send_message(message.chat.id, 'Selecciona el evento a borrar:', reply_markup=botones)
+            bot.register_next_step_handler(msg, dialog_borrar_evento)
         else:
-            for n in range(0, long_list-1, 2):
-                botones.add(lista[n], lista[n+1])
-            botones.add(lista[long_list-1])
-        msg = bot.send_message(message.chat.id, 'Selecciona el evento a borrar:', reply_markup=botones)
-        bot.register_next_step_handler(msg, dialog_borrar_evento)
+            msg = bot.send_message(message.chat.id, '<b>La lista de eventos está vacia.\nNada que borrar.</b>', parse_mode="html")
+            showButtons(bot, message.chat.id)
     
     def dialog_borrar_evento(message):
         dicc_borrado_evento[message.chat.id] = message.text
@@ -146,6 +146,8 @@ def botactions(bot):
             filename = str(message.chat.id) + '_' + dicc_borrado_evento[message.chat.id] + '.json'
             path = directorioRaiz + '/BBDD/' + filename
             remove(path)
+            bot.send_message(message.chat.id, 'Elemento <b>' + dicc_borrado_evento[message.chat.id] + '</b> borrado!', parse_mode="html")
+            del dicc_borrado_evento[message.chat.id]
         showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
 
