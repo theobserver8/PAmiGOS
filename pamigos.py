@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import telebot
 from time import sleep
-from telebot.types import ReplyKeyboardMarkup
-from telebot.types import ForceReply
-from telebot.types import ReplyKeyboardRemove
-import json
+from os import remove
+from telebot.types import ReplyKeyboardMarkup, ForceReply, ReplyKeyboardRemove
+import json, os
 
 with open('config.json', 'r') as file:  config = json.load(file)
 
@@ -14,6 +13,9 @@ BOT_INTERVAL = 1
 BOT_TIMEOUT = 20
 
 DEBUG = True
+directorioRaiz = '/Users/ingen/Documents/RepoGitK/PAmiGOS/'
+
+dicc_borrado_evento = {}
 
 def bot_polling():
     print("Starting bot polling now")
@@ -38,6 +40,25 @@ def bot_polling():
             print("Bot polling loop finished")
             break
 #--------------------------------------------------------------------------------------------------
+def showButtons(bot, chatid):
+    botones = ReplyKeyboardMarkup(resize_keyboard=True)
+    botones.row('/AYUDA❓')
+    botones.row('/📝EVENTO📝', '/💰GASTOS💰')
+    botones.row('/🚶🏼‍♂️AMIGOS🚶🏻‍♀️', '/💶CALCULAR💶')
+    botones.row('/▪️OCULTAR_BOTONES▪️')
+    msg = bot.send_message(chatid, 'Selecciona una opción:', reply_markup=botones)
+    #return msg
+
+def listar_eventos(chatid):
+    contenido = os.listdir(directorioRaiz + 'BBDD/') #Guardo en una lista los archivos de la BBDD
+    listado = []
+    for filename in contenido:
+        if filename.startswith(str(chatid) + '_'):
+            nombreExtension = (filename.split('_', 1))[1] #Quito el chat id
+            nombre = (nombreExtension.split('.json'))[0] #Quito la extensión .json
+            listado.append(nombre)
+    return listado
+#--------------------------------------------------------------------------------------------------
 def botactions(bot):
     @bot.message_handler(commands=['start'])
     def cmd_start(message):
@@ -46,12 +67,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['inicio', 'botones', 'CANCELAR'])
     def cmd_iniciar(message):
-        botones = ReplyKeyboardMarkup(resize_keyboard=True)
-        botones.row('/AYUDA❓')
-        botones.row('/📝EVENTO📝', '/💰GASTOS💰')
-        botones.row('/🚶🏼‍♂️AMIGOS🚶🏻‍♀️', '/💶CALCULAR💶')
-        botones.row('/▪️OCULTAR_BOTONES▪️')
-        msg = bot.send_message(message.chat.id, "Elige una opción:", reply_markup=botones)
+        showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['AYUDA❓'])
     def cmd_help(message):
@@ -63,19 +79,82 @@ def botactions(bot):
         texto += '\n\nUsa este comando /inicio para empezar...'
         msg = bot.send_message(message.chat.id, texto, parse_mode="html", reply_markup=botones)
 
+
     @bot.message_handler(commands=['📝EVENTO📝'])
     def cmd_cuentas(message):
         botones = ReplyKeyboardMarkup(resize_keyboard=True)
         botones.row('/NUEVOevento', '/VEReventos')
         botones.row('/BORRARevento', '/CANCELAR')
-        bot.send_message(message.chat.id, '__Editor de *CUENTAS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
+        bot.send_message(message.chat.id, '__Editor de *EVENTOS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
+
+    @bot.message_handler(commands=['NUEVOevento'])
+    def nuevo_evento(message):
+        markup = ForceReply()
+        msg = bot.send_message(message.chat.id, 'Vas a crear un nuevo evento.\nIntroduce el nombre:', reply_markup=markup)
+        bot.register_next_step_handler(msg, crear_archivo)
+
+    def crear_archivo(message):
+        markup = ForceReply()
+        nombre = str(message.chat.id) + '_' + str(message.text)
+        extension = '.json'
+        if not nombre.find(extension) == -1: #Protección si alguien escribe .json
+            bot.send_message(message.chat.id, 'Nombre inválido.',)
+            msg = bot.send_message(message.chat.id, 'Introduce un nombre distinto:', reply_markup=markup)
+            bot.register_next_step_handler(msg, crear_archivo)
+        path = directorioRaiz + '/BBDD/' + nombre + extension #Creo previamente una carpeta BBDD que almacenará los EVENTOS
+        try:
+            f = open(path, "x")
+            msg = bot.send_message(message.chat.id, 'Evento <b>' + str(message.text) + '</b> creado!', parse_mode="html")
+            showButtons(bot, message.chat.id)
+        except:
+            bot.send_message(message.chat.id, 'Ya existe ese evento.',)
+            msg = bot.send_message(message.chat.id, 'Introduce un nombre distinto:', reply_markup=markup)
+            bot.register_next_step_handler(msg, crear_archivo)
+
+    @bot.message_handler(commands=['VEReventos'])
+    def ver_eventos(message):
+        listado = listar_eventos(message.chat.id)
+        listado_lineas = ('\n - '.join(listado)) #Listado separado en líneas
+        msg = bot.send_message(message.chat.id, '<b>La lista de eventos es:</b>\n ' + '- ' + listado_lineas, parse_mode="html")
+        showButtons(bot, message.chat.id)
+
+    @bot.message_handler(commands=['BORRARevento'])
+    def borrar_evento(message):
+        lista = listar_eventos(message.chat.id)
+        botones = ReplyKeyboardMarkup(resize_keyboard=True)
+        long_list = len(lista)
+        if long_list%2 == 0:
+            for n in range(0, long_list, 2):
+                botones.add(lista[n], lista[n+1])
+        else:
+            for n in range(0, long_list-1, 2):
+                botones.add(lista[n], lista[n+1])
+            botones.add(lista[long_list-1])
+        msg = bot.send_message(message.chat.id, 'Selecciona el evento a borrar:', reply_markup=botones)
+        bot.register_next_step_handler(msg, dialog_borrar_evento)
+    
+    def dialog_borrar_evento(message):
+        dicc_borrado_evento[message.chat.id] = message.text
+        markup = ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.row('CONFIRMAR')
+        markup.row('CANCELAR')
+        msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
+        bot.register_next_step_handler(msg, borrado_final_evento)
+    
+    def borrado_final_evento(message):
+        if message.text == 'CONFIRMAR':
+            filename = str(message.chat.id) + '_' + dicc_borrado_evento[message.chat.id] + '.json'
+            path = directorioRaiz + '/BBDD/' + filename
+            remove(path)
+        showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
+
 
     @bot.message_handler(commands=['💰GASTOS💰'])
     def cmd_eventos(message):
         botones = ReplyKeyboardMarkup(resize_keyboard=True)
         botones.row('/NUEVOgasto', '/VERgastos')
         botones.row('/BORRARgasto', '/CANCELAR')
-        bot.send_message(message.chat.id, '__Editor de *EVENTOS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
+        bot.send_message(message.chat.id, '__Editor de *GASTOS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
 
     @bot.message_handler(commands=['🚶🏼‍♂️AMIGOS🚶🏻‍♀️'])
     def cmd_amigos(message):
