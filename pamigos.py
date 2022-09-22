@@ -25,7 +25,6 @@ def bot_polling():
             botactions(bot)
             bot.set_my_commands([
                 telebot.types.BotCommand('/botones', 'Muestra los botones'),
-                telebot.types.BotCommand('/help', 'Ayuda del bot'),
             ])
             bot.polling(none_stop=True, interval=BOT_INTERVAL, timeout=BOT_TIMEOUT)
 
@@ -48,33 +47,34 @@ def botactions(bot):
     @bot.message_handler(commands=['inicio', 'botones', 'CANCELAR'])
     def cmd_iniciar(message):
         botones = ReplyKeyboardMarkup(resize_keyboard=True)
-        botones.row('/📝CUENTAS📝', '/✏️EVENTOS✏️')
+        botones.row('/AYUDA❓')
+        botones.row('/📝EVENTO📝', '/💰GASTOS💰')
         botones.row('/🚶🏼‍♂️AMIGOS🚶🏻‍♀️', '/💶CALCULAR💶')
         botones.row('/▪️OCULTAR_BOTONES▪️')
         msg = bot.send_message(message.chat.id, "Elige una opción:", reply_markup=botones)
 
-    @bot.message_handler(commands=['help'])
+    @bot.message_handler(commands=['AYUDA❓'])
     def cmd_help(message):
         botones = ReplyKeyboardRemove()
-        texto = '📝CUENTAS📝: Conjunto de eventos'
-        texto += '\n✏️EVENTOS✏️: Distintas actividades realizadas en esa cuenta.'
-        texto += '\n🚶🏼‍♂️AMIGOS🚶🏻‍♀️: Amigos que forman parte de la cuenta.'
-        texto += '\n💶CALCULAR💶: Muestra los pagos a realizar.'
-        texto += '\nUsa este comando /inicio para empezar...'
-        msg = bot.send_message(message.chat.id, texto, reply_markup=botones)
+        texto = '<b>📝 <u>EVENTO</u> 📝</b>: Nombre del evento organizado.\nEjemplo: Viaje a Madrid.'
+        texto += '\n\n<b>💰 <u>GASTOS</u> 💰</b>: Distintos gastos del evento.\nEjemplo: Alojamiento, gasolina, entradas, comida...'
+        texto += '\n\n<b>🚶🏼‍♂️ <u>AMIGOS</u> 🚶🏻‍♀️</b>: Amigos que pueden formar parte de ese evento.'
+        texto += '\n\n<b>💶 <u>CALCULAR</u> 💶</b>: Muestra los pagos a realizar entre vosotros para ajustar las cuentas.'
+        texto += '\n\nUsa este comando /inicio para empezar...'
+        msg = bot.send_message(message.chat.id, texto, parse_mode="html", reply_markup=botones)
 
-    @bot.message_handler(commands=['📝CUENTAS📝'])
+    @bot.message_handler(commands=['📝EVENTO📝'])
     def cmd_cuentas(message):
-        botones = ReplyKeyboardMarkup(resize_keyboard=True)
-        botones.row('/NUEVAcuenta', '/VERcuentas')
-        botones.row('/BORRARcuenta', '/CANCELAR')
-        bot.send_message(message.chat.id, '__Editor de *CUENTAS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
-
-    @bot.message_handler(commands=['✏️EVENTOS✏️'])
-    def cmd_eventos(message):
         botones = ReplyKeyboardMarkup(resize_keyboard=True)
         botones.row('/NUEVOevento', '/VEReventos')
         botones.row('/BORRARevento', '/CANCELAR')
+        bot.send_message(message.chat.id, '__Editor de *CUENTAS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
+
+    @bot.message_handler(commands=['💰GASTOS💰'])
+    def cmd_eventos(message):
+        botones = ReplyKeyboardMarkup(resize_keyboard=True)
+        botones.row('/NUEVOgasto', '/VERgastos')
+        botones.row('/BORRARgasto', '/CANCELAR')
         bot.send_message(message.chat.id, '__Editor de *EVENTOS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
 
     @bot.message_handler(commands=['🚶🏼‍♂️AMIGOS🚶🏻‍♀️'])
