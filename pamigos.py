@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import errno
 import telebot
 from time import sleep
 from os import remove
@@ -9,12 +8,11 @@ import json, os
 with open('config.json', 'r') as file:  config = json.load(file)
 
 BOT_TOKEN = config['TOKEN']['PAmiGOSbot']
+DIRECTORIO_RAIZ = config['ROOT_PATH']
 
 BOT_INTERVAL = 1
 BOT_TIMEOUT = 20
 
-#directorioRaiz = '/Users/ingen/Documents/RepoGitK/PAmiGOS/'
-directorioRaiz = '/home/ec2-user/'
 dicc_borrado_evento = {}
 
 def bot_polling():
@@ -49,8 +47,29 @@ def showButtons(bot, chatid):
     msg = bot.send_message(chatid, 'Selecciona una opción:', reply_markup=botones)
     #return msg
 
+def agrupar_botones(long_list, lista, botones):
+    if long_list%2 == 0:
+        for n in range(0, long_list, 2):
+            botones.add(lista[n], lista[n+1])
+    else:
+        for n in range(0, long_list-1, 2):
+            botones.add(lista[n], lista[n+1])
+        botones.add(lista[long_list-1])
+    return botones
+
+def createFilenameToPath(message):
+    nombre = str(message.chat.id) + '_' + str(message.text)
+    extension = '.json'
+    path = DIRECTORIO_RAIZ + '/BBDD/' + nombre + extension #Tengo previamente una carpeta BBDD que almacena los EVENTOS
+    return path
+
+def deleteFilenameToPath(message):
+    filename = str(message.chat.id) + '_' + dicc_borrado_evento[message.chat.id] + '.json'
+    path = DIRECTORIO_RAIZ + '/BBDD/' + filename
+    remove(path)
+
 def listar_eventos(chatid):
-    contenido = os.listdir(directorioRaiz + 'BBDD/') #Guardo en una lista los archivos de la BBDD
+    contenido = os.listdir(DIRECTORIO_RAIZ + 'BBDD/') #Guardo en una lista los archivos de la BBDD
     listado = []
     for filename in contenido:
         if filename.startswith(str(chatid) + '_'):
@@ -94,9 +113,7 @@ def botactions(bot):
         bot.register_next_step_handler(msg, crear_archivo)
 
     def crear_archivo(message):
-        nombre = str(message.chat.id) + '_' + str(message.text)
-        extension = '.json'
-        path = directorioRaiz + '/BBDD/' + nombre + extension #Tengo previamente una carpeta BBDD que almacena los EVENTOS
+        path = createFilenameToPath(message)
         try:
             open(path, "x")
             bot.send_message(message.chat.id, 'Evento <b>' + str(message.text) + '</b> creado!', parse_mode="html")
@@ -120,13 +137,7 @@ def botactions(bot):
         if len(lista):
             botones = ReplyKeyboardMarkup(resize_keyboard=True)
             long_list = len(lista)
-            if long_list%2 == 0:
-                for n in range(0, long_list, 2):
-                    botones.add(lista[n], lista[n+1])
-            else:
-                for n in range(0, long_list-1, 2):
-                    botones.add(lista[n], lista[n+1])
-                botones.add(lista[long_list-1])
+            botones = agrupar_botones(long_list, lista, botones)
             msg = bot.send_message(message.chat.id, 'Selecciona el evento a borrar:', reply_markup=botones)
             bot.register_next_step_handler(msg, dialog_borrar_evento)
         else:
@@ -143,9 +154,7 @@ def botactions(bot):
     
     def borrado_final_evento(message):
         if message.text == 'CONFIRMAR':
-            filename = str(message.chat.id) + '_' + dicc_borrado_evento[message.chat.id] + '.json'
-            path = directorioRaiz + '/BBDD/' + filename
-            remove(path)
+            deleteFilenameToPath(message)
             bot.send_message(message.chat.id, 'Elemento <b>' + dicc_borrado_evento[message.chat.id] + '</b> borrado!', parse_mode="html")
             del dicc_borrado_evento[message.chat.id]
         showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
