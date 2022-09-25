@@ -162,34 +162,27 @@ def botactions(bot):
             long_list = len(lista)
             eventos = agrupar_botones(long_list, lista, eventos)
             msg = bot.send_message(message.chat.id, 'Selecciona el evento a borrar:', reply_markup=eventos)
-            bot.register_next_step_handler(msg, dialog_borrar_evento)
+            bot.register_next_step_handler(msg, dialogBorrarEvento)
         else:
             bot.send_message(message.chat.id, '<b>La lista de eventos está vacia.\nNada que borrar.</b>', parse_mode="html")
             showButtons(bot, message.chat.id)
     
-    def dialog_borrar_evento(message):
+    def dialogBorrarEvento(message):
         dicc_temp['dicc_evento'][message.chat.id] = message.text
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
         markup.row('CONFIRMAR')
         markup.row('CANCELAR')
         msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
-        bot.register_next_step_handler(msg, borrado_final_evento)
+        bot.register_next_step_handler(msg, borradoFinalEvento)
     
-    def borrado_final_evento(message):
+    def borradoFinalEvento(message):
         if message.text == 'CONFIRMAR':
             path = filenameToPath(message)
             remove(path)
-            bot.send_message(message.chat.id, 'Elemento <b>' + dicc_temp['dicc_evento'][message.chat.id] + '</b> borrado!', parse_mode="html")
+            bot.send_message(message.chat.id, 'Evento <b>' + dicc_temp['dicc_evento'][message.chat.id] + '</b> borrado!', parse_mode="html")
             del dicc_temp['dicc_evento'][message.chat.id]
         showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
-
-    @bot.message_handler(commands=['💰GASTOS💰'])
-    def cmd_gastos(message):
-        botones = ReplyKeyboardMarkup(resize_keyboard=True)
-        botones.row('/NUEVOgasto', '/VERgastos')
-        botones.row('/BORRARgasto', '/CANCELAR')
-        bot.send_message(message.chat.id, '__Editor de *GASTOS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
 
     @bot.message_handler(commands=['🚶🏼‍♂️AMIGOS🚶🏻‍♀️'])
     def cmd_amigos(message):
@@ -236,7 +229,7 @@ def botactions(bot):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
             long_list = len(lista)
             eventos = agrupar_botones(long_list, lista, eventos)
-            msg = bot.send_message(message.chat.id, 'Selecciona evento para ver los participantes:', reply_markup=eventos)
+            msg = bot.send_message(message.chat.id, 'Selecciona evento para ver los amigos:', reply_markup=eventos)
             bot.register_next_step_handler(msg, verAmigosEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos para ver.\nCrea primero un evento.</b>', parse_mode="html")
@@ -252,8 +245,60 @@ def botactions(bot):
             listado_lineas = ('\n - '.join(listado)) #Listado separado en líneas
             bot.send_message(message.chat.id, '<b>Lista de amigos:</b>\n ' + '- ' + listado_lineas, parse_mode="html")
         else:
-            bot.send_message(message.chat.id, '<b>No hay ningún participante!</b>', parse_mode="html")
+            bot.send_message(message.chat.id, '<b>No hay ningún amigo en el evento!</b>', parse_mode="html")
         showButtons(bot, message.chat.id)
+
+    @bot.message_handler(commands='BORRARamigo')
+    def cmd_borrarAmigo(message):
+        lista = listar_eventos(message.chat.id)
+        if len(lista):
+            eventos = ReplyKeyboardMarkup(resize_keyboard=True)
+            long_list = len(lista)
+            eventos = agrupar_botones(long_list, lista, eventos)
+            msg = bot.send_message(message.chat.id, 'Selecciona evento para ver los amigos:', reply_markup=eventos)
+            bot.register_next_step_handler(msg, borrarAmigosEvento)
+        else:
+            bot.send_message(message.chat.id, '<b>No hay eventos para borrar amigos.\nCrea primero un evento.</b>', parse_mode="html")
+            showButtons(bot, message.chat.id)
+
+    def borrarAmigosEvento(message):
+        dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
+        path = filenameToPath(message)
+        loadData(message.chat.id, path)
+        dicc_temp['dicc_path'][message.chat.id] = path #Guardo la ruta, con el chat id. Para acceder luego al borrado del amigo.
+        lista_amigos = dicc_data[message.chat.id]['amigos']
+        if len(lista_amigos):
+            botones = ReplyKeyboardMarkup(resize_keyboard=True)
+            long_list = len(lista_amigos)
+            botones = agrupar_botones(long_list, lista_amigos, botones)
+            msg = bot.send_message(message.chat.id, 'Selecciona amigo a borrar:', reply_markup=botones)
+            bot.register_next_step_handler(msg, dialogBorrarAmigo)
+        else:
+            bot.send_message(message.chat.id, '<b>No hay amigos para borrar en este evento.</b>', parse_mode="html")
+            showButtons(bot, message.chat.id)
+
+    def dialogBorrarAmigo(message):
+        dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
+        markup = ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.row('CONFIRMAR')
+        markup.row('CANCELAR')
+        msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
+        bot.register_next_step_handler(msg, borradoFinalAmigo)
+    
+    def borradoFinalAmigo(message):
+        if message.text == 'CONFIRMAR':
+            dicc_data[message.chat.id]['amigos'].remove(dicc_temp['dicc_amigo_temp'][message.chat.id]) #Elimina amigo de la lista
+            bot.send_message(message.chat.id, 'Amigo <b>' + dicc_temp['dicc_amigo_temp'][message.chat.id] + '</b> borrado!', parse_mode="html")
+            saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
+        showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
+
+
+    @bot.message_handler(commands=['💰GASTOS💰'])
+    def cmd_gastos(message):
+        botones = ReplyKeyboardMarkup(resize_keyboard=True)
+        botones.row('/NUEVOgasto', '/VERgastos')
+        botones.row('/BORRARgasto', '/CANCELAR')
+        bot.send_message(message.chat.id, '__Editor de *GASTOS*__\nEscoge una opción:', parse_mode="MarkdownV2", reply_markup=botones)
 
 
     @bot.message_handler(commands=['💶CALCULAR💶'])
