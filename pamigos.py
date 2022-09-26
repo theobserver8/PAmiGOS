@@ -21,6 +21,7 @@ dicc_temp['dicc_path'] = {}
 dicc_temp['dicc_gasto'] = {}
 dicc_temp['dicc_gasto_nuevo'] = {}
 dicc_temp['num_gasto_borrar'] = {}
+dicc_temp['calculo'] = {}
 dicc_data = {}
 def bot_polling():
     print("Starting bot polling now")
@@ -494,10 +495,50 @@ def botactions(bot):
 
     @bot.message_handler(commands=['💶CALCULAR💶'])
     def cmd_calcular(message):
+        lista = listar_eventos(message.chat.id)
+        if len(lista):
+            eventos = ReplyKeyboardMarkup(resize_keyboard=True)
+            long_list = len(lista)
+            eventos = agrupar_botones(long_list, lista, eventos)
+            msg = bot.send_message(message.chat.id, 'Selecciona el evento a calcular:', reply_markup=eventos)
+            bot.register_next_step_handler(msg, dialogCalcular)
+        else:
+            msg = bot.send_message(message.chat.id, '<b>No hay eventos para calcular.\nCrea primero un evento.</b>', parse_mode="html")
+            showButtons(bot, message.chat.id)
+
+    def dialogCalcular(message):
+        dicc_temp['dicc_evento'][message.chat.id] = message.text
+        path = filenameToPath(message)
+        dicc_temp['dicc_path'][message.chat.id] = path
         botones = ReplyKeyboardMarkup(resize_keyboard=True)
-        botones.row('/CALCULAR')
-        botones.row('/CANCELAR')
-        bot.send_message(message.chat.id, 'Confirma el cálculo de la cuenta y mostraré los distintos pagos a realizar.', reply_markup=botones)
+        botones.row('CALCULAR')
+        botones.row('CANCELAR')
+        msg = bot.send_message(message.chat.id, 'Confirma el cálculo de la cuenta y mostraré los distintos pagos a realizar.', reply_markup=botones)
+        bot.register_next_step_handler(msg, calcular)
+
+    def calcular(message):
+        loadData(message.chat.id, dicc_temp['dicc_path'][message.chat.id])
+        listado_amigos = list(dicc_data[message.chat.id]['amigos'])
+        listado_gastos = list(dicc_data[message.chat.id]['gastos']) #listado de gastos
+
+        dicc_temp['calculo'][message.chat.id] = {}
+        for amigo in dicc_data[message.chat.id]['amigos']:
+            dicc_temp['calculo'][message.chat.id][amigo] = {}
+            dicc_temp['calculo'][message.chat.id][amigo]['pagado'] = 0  #Iniciamos a cero las cuentas
+            dicc_temp['calculo'][message.chat.id][amigo]['debido'] = 0
+            dicc_temp['calculo'][message.chat.id][amigo]['diff'] = 0
+
+        #Calculo lo debido y lo pagado
+        for gasto in dicc_data[message.chat.id]['gastos']:
+            dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += int(gasto['cantidad']) #Actualizo todo lo pagado
+            for participante in gasto['participantes']:
+                dicc_temp['calculo'][message.chat.id][participante]['debido'] += round(float(gasto['cantidad'])/(len(gasto['participantes'])),2) #Actualizo todo lo debido
+
+        #Calculo las diferencias
+        for amigo in dicc_temp['calculo'][message.chat.id]: #Esto es un dicc y no una lista como los gastos.
+            dicc_temp['calculo'][message.chat.id][amigo]['diff'] = dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado']
+
+
 
     @bot.message_handler(commands=['▪️OCULTAR_BOTONES▪️'])
     def cmd_hideButtons(message):
