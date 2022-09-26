@@ -110,7 +110,7 @@ def botactions(bot):
         botones = ReplyKeyboardRemove()
         texto = '<b>📝 <u>EVENTO</u> 📝</b>: Nombre del evento organizado.\nEjemplo: Viaje a Madrid.'
         texto += '\n\n<b>💰 <u>GASTOS</u> 💰</b>: Distintos gastos del evento.\nEjemplo: Alojamiento, gasolina, entradas, comida...'
-        texto += '\n\n<b>🚶🏼‍♂️ <u>AMIGOS</u> 🚶🏻‍♀️</b>: Amigos que pueden formar parte de ese evento.'
+        texto += '\n\n<b>🚶🏼‍♂️ <u>AMIGOS</u> 🚶🏻‍♀️</b>: Amigos que pueden formar parte de ese evento. No es una mención, escribe su nombre directamente.'
         texto += '\n\n<b>💶 <u>CALCULAR</u> 💶</b>: Muestra los pagos a realizar entre vosotros para ajustar las cuentas.'
         texto += '\n\nUsa este comando /inicio para empezar...'
         bot.send_message(message.chat.id, texto, parse_mode="html", reply_markup=botones)
@@ -364,7 +364,7 @@ def botactions(bot):
             msg = bot.send_message(message.chat.id, 'ERROR: La cantidad debe de ser un número.\nIntroduce la cantidad pagada:')
             bot.register_next_step_handler(msg, leerCantidadPedirParticipantes) #Volvemos a ejecutar esta función
         else:
-            dicc_temp['amigos'][message.chat.id].append('FIN🔚') #Añado un elemento llamado FIN
+            dicc_temp['amigos'][message.chat.id].append('FIN 🔚') #Añado un elemento llamado FIN
             participantes = ReplyKeyboardMarkup(resize_keyboard=True)
             long_list = len(dicc_temp['amigos'][message.chat.id])
             participantes = agrupar_botones(long_list, dicc_temp['amigos'][message.chat.id], participantes)
@@ -372,7 +372,7 @@ def botactions(bot):
             bot.register_next_step_handler(msg, pedirParticipantesGuardarGasto)
 
     def pedirParticipantesGuardarGasto(message):
-        if message.text == 'FIN🔚':
+        if message.text == 'FIN 🔚':
             dicc_data[message.chat.id]['gastos'].append(dicc_temp['dicc_gasto'][message.chat.id])
             bot.send_message(message.chat.id, 'Gasto <b>' + dicc_temp['dicc_gasto'][message.chat.id]['concepto'] + '</b> añadido a ' + dicc_temp['dicc_evento'][message.chat.id] + '!', parse_mode="html")
             saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
@@ -386,6 +386,41 @@ def botactions(bot):
             msg = bot.send_message(message.chat.id, 'Selecciona los participantes:', reply_markup=participantes_restantes)
             bot.register_next_step_handler(msg, pedirParticipantesGuardarGasto) #Recurro a esta función
 
+    @bot.message_handler(commands='VERgastos')
+    def cmd_verGastos(message):
+        lista = listar_eventos(message.chat.id)
+        if len(lista):
+            eventos = ReplyKeyboardMarkup(resize_keyboard=True)
+            long_list = len(lista)
+            eventos = agrupar_botones(long_list, lista, eventos)
+            msg = bot.send_message(message.chat.id, 'Selecciona evento para ver los gastos:', reply_markup=eventos)
+            bot.register_next_step_handler(msg, verGastosEvento)
+        else:
+            bot.send_message(message.chat.id, '<b>No hay eventos.\nCrea primero un evento.</b>', parse_mode="html")
+            showButtons(bot, message.chat.id)
+
+    def verGastosEvento(message):
+        dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
+        path = filenameToPath(message)
+        loadData(message.chat.id, path)
+        listado = dicc_data[message.chat.id]['gastos']
+        if len(listado):
+            texto = ''
+            for n in listado:
+                texto += 'Evento nº' + str(listado.index(n)+1) + ':\n'
+                texto += 'Pagador: ' + n['pagador'] + '\n'
+                texto += 'Concepto: ' + n['concepto'] + '\n'
+                texto += 'Cantidad: ' + str(n['cantidad']) + '\n'
+                texto += 'Participantes: '
+                for i in n['participantes']:
+                    texto += i + ', '
+                texto = texto[:-2]
+                texto += '\n\n'
+
+            bot.send_message(message.chat.id, '<b>Lista de gastos:</b>\n\n' + texto, parse_mode="html")
+        else:
+            bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
+        showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['💶CALCULAR💶'])
     def cmd_calcular(message):
