@@ -46,7 +46,7 @@ def bot_polling():
 #--------------------------------------------------------------------------------------------------
 def showButtons(bot, chatid):
     botones = ReplyKeyboardMarkup(resize_keyboard=True)
-    botones.row('/AYUDA❓')
+    botones.row('/☕️KO-FI☕️', '/AYUDA❓')
     botones.row('/📝EVENTO📝', '/💰GASTOS💰')
     botones.row('/🚶🏼‍♂️AMIGOS🚶🏻‍♀️', '/💶CALCULAR💶')
     botones.row('/▪️OCULTAR_BOTONES▪️')
@@ -104,6 +104,12 @@ def botactions(bot):
     @bot.message_handler(commands=['inicio', 'botones', 'CANCELAR'])
     def cmd_iniciar(message):
         showButtons(bot, message.chat.id)
+
+    @bot.message_handler(commands=['☕️KO-FI☕️'])
+    def cmd_kofi(message):
+        texto = 'Si te ha gustado mi trabajo y te resulta útil, apoyando con un café ayudarás al desarrollo de PAmiGOS.\n'
+        texto += '<a href= "https://ko-fi.com/theobserver8">https://ko-fi.com/theobserver8</a>'
+        bot.send_message(message.chat.id, texto, parse_mode="html")
 
     @bot.message_handler(commands=['AYUDA❓'])
     def cmd_help(message):
