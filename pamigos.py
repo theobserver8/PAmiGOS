@@ -15,13 +15,12 @@ BOT_TIMEOUT = 20
 
 dicc_temp = {}
 dicc_temp['dicc_evento'] = {}
-dicc_temp['dicc_amigos'] = {}
+dicc_temp['amigos'] = {}
 dicc_temp['dicc_amigo_temp'] = {}
 dicc_temp['dicc_path'] = {}
 dicc_temp['dicc_gasto'] = {}
 dicc_temp['dicc_gasto_nuevo'] = {}
-dicc_data = {} #Clave: chatid. Valor: amigos y gastos.
-
+dicc_data = {}
 def bot_polling():
     print("Starting bot polling now")
 
@@ -221,8 +220,19 @@ def botactions(bot):
             bot.register_next_step_handler(msg, leerAmigo)
         else:
             dicc_data[message.chat.id]['amigos'].append(dicc_temp['dicc_amigo_temp'][message.chat.id]) #Añado el amigo escrito al dicc de datos.
-            saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
             bot.send_message(message.chat.id, 'Amigo <b>' + str(message.text) + '</b> añadido!', parse_mode="html")
+            markup = ReplyKeyboardMarkup(resize_keyboard=True)
+            markup.row('NO', 'SI')
+            msg = bot.send_message(message.chat.id, '¿Quieres añadir otro amigo?', reply_markup=markup)
+            bot.register_next_step_handler(msg, dialogAddAmigo)
+
+    def dialogAddAmigo(message):
+        if message.text == 'SI':
+            markup = ForceReply()
+            msg = bot.send_message(message.chat.id, 'Introduce el nombre del amigo:', reply_markup=markup)
+            bot.register_next_step_handler(msg, leerAmigo)
+        else:
+            saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
             showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands='VERamigos')
@@ -323,7 +333,7 @@ def botactions(bot):
         listado = list(dicc_data[message.chat.id]['amigos']) #Hago una copia de la lista, porque sino modifico la original
         dicc_temp['dicc_path'][message.chat.id] = path
         dicc_temp['dicc_gasto'][message.chat.id] = {}
-        dicc_temp['dicc_gasto'][message.chat.id]['amigos'] = listado
+        dicc_temp['amigos'][message.chat.id] = listado
         if len(listado):
             amigos = ReplyKeyboardMarkup(resize_keyboard=True)
             long_list = len(listado)
@@ -336,7 +346,7 @@ def botactions(bot):
 
     def leerPagadorPedirConcepto(message):
         dicc_temp['dicc_gasto'][message.chat.id]['pagador'] = message.text
-        dicc_temp['dicc_gasto'][message.chat.id]['amigos'].remove(message.text) #Elimino al pagador del listado de amigos a aparecer
+        dicc_temp['amigos'][message.chat.id].remove(message.text) #Elimino al pagador del listado de amigos a aparecer
         dicc_temp['dicc_gasto'][message.chat.id]['participantes'] = [message.text] #Añado el pagador a los participantes
         markup = ForceReply()
         msg = bot.send_message(message.chat.id, 'Introduce el concepto del gasto:', reply_markup=markup)
@@ -354,30 +364,25 @@ def botactions(bot):
             msg = bot.send_message(message.chat.id, 'ERROR: La cantidad debe de ser un número.\nIntroduce la cantidad pagada:')
             bot.register_next_step_handler(msg, leerCantidadPedirParticipantes) #Volvemos a ejecutar esta función
         else:
-            dicc_temp['dicc_gasto'][message.chat.id]['amigos'].append('FIN🔚') #Añado un elemento llamado FIN
+            dicc_temp['amigos'][message.chat.id].append('FIN🔚') #Añado un elemento llamado FIN
             participantes = ReplyKeyboardMarkup(resize_keyboard=True)
-            long_list = len(dicc_temp['dicc_gasto'][message.chat.id]['amigos'])
-            participantes = agrupar_botones(long_list, dicc_temp['dicc_gasto'][message.chat.id]['amigos'], participantes)
+            long_list = len(dicc_temp['amigos'][message.chat.id])
+            participantes = agrupar_botones(long_list, dicc_temp['amigos'][message.chat.id], participantes)
             msg = bot.send_message(message.chat.id, 'Selecciona los participantes:', reply_markup=participantes)
             bot.register_next_step_handler(msg, pedirParticipantesGuardarGasto)
 
     def pedirParticipantesGuardarGasto(message):
         if message.text == 'FIN🔚':
-            dicc_temp['dicc_gasto_nuevo'][message.chat.id] = {}
-            dicc_temp['dicc_gasto_nuevo'][message.chat.id]['pagador'] = dicc_temp['dicc_gasto'][message.chat.id]['pagador']
-            dicc_temp['dicc_gasto_nuevo'][message.chat.id]['concepto'] = dicc_temp['dicc_gasto'][message.chat.id]['concepto']
-            dicc_temp['dicc_gasto_nuevo'][message.chat.id]['cantidad'] = dicc_temp['dicc_gasto'][message.chat.id]['cantidad']
-            dicc_temp['dicc_gasto_nuevo'][message.chat.id]['participantes'] = dicc_temp['dicc_gasto'][message.chat.id]['participantes']
-            dicc_data[message.chat.id]['gastos'].append(dicc_temp['dicc_gasto_nuevo'][message.chat.id])
+            dicc_data[message.chat.id]['gastos'].append(dicc_temp['dicc_gasto'][message.chat.id])
             bot.send_message(message.chat.id, 'Gasto <b>' + dicc_temp['dicc_gasto'][message.chat.id]['concepto'] + '</b> añadido a ' + dicc_temp['dicc_evento'][message.chat.id] + '!', parse_mode="html")
             saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
             showButtons(bot, message.chat.id)
         else:
             dicc_temp['dicc_gasto'][message.chat.id]['participantes'].append(message.text)
-            dicc_temp['dicc_gasto'][message.chat.id]['amigos'].remove(message.text) #Quito de la lista amigo seleccionado
+            dicc_temp['amigos'][message.chat.id].remove(message.text) #Quito de la lista amigo seleccionado
             participantes_restantes = ReplyKeyboardMarkup(resize_keyboard=True)
-            long_list = len(dicc_temp['dicc_gasto'][message.chat.id]['amigos']) #Vuelvo a mostrar el listado
-            participantes_restantes = agrupar_botones(long_list, dicc_temp['dicc_gasto'][message.chat.id]['amigos'], participantes_restantes)
+            long_list = len(dicc_temp['amigos'][message.chat.id]) #Vuelvo a mostrar el listado
+            participantes_restantes = agrupar_botones(long_list, dicc_temp['amigos'][message.chat.id], participantes_restantes)
             msg = bot.send_message(message.chat.id, 'Selecciona los participantes:', reply_markup=participantes_restantes)
             bot.register_next_step_handler(msg, pedirParticipantesGuardarGasto) #Recurro a esta función
 
