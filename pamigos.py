@@ -371,7 +371,6 @@ def botactions(bot):
             dicc_data[message.chat.id]['gastos'].append(dicc_temp['dicc_gasto_nuevo'][message.chat.id])
             bot.send_message(message.chat.id, 'Gasto <b>' + dicc_temp['dicc_gasto'][message.chat.id]['concepto'] + '</b> añadido a ' + dicc_temp['dicc_evento'][message.chat.id] + '!', parse_mode="html")
             saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
-            print(dicc_data)
             showButtons(bot, message.chat.id)
         else:
             dicc_temp['dicc_gasto'][message.chat.id]['participantes'].append(message.text)
