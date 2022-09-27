@@ -512,11 +512,17 @@ def botactions(bot):
         dicc_temp['dicc_evento'][message.chat.id] = message.text
         path = filenameToPath(message)
         dicc_temp['dicc_path'][message.chat.id] = path
-        botones = ReplyKeyboardMarkup(resize_keyboard=True)
-        botones.row('CALCULAR')
-        botones.row('CANCELAR')
-        msg = bot.send_message(message.chat.id, 'Confirma el cálculo de la cuenta y mostraré los distintos pagos a realizar.', reply_markup=botones)
-        bot.register_next_step_handler(msg, calcular)
+        loadData(message.chat.id, path)
+        listado = dicc_data[message.chat.id]['gastos']
+        if len(listado):
+            botones = ReplyKeyboardMarkup(resize_keyboard=True)
+            botones.row('CALCULAR')
+            botones.row('CANCELAR')
+            msg = bot.send_message(message.chat.id, 'Confirma el cálculo de la cuenta y mostraré los distintos pagos a realizar.', reply_markup=botones)
+            bot.register_next_step_handler(msg, calcular)
+        else:      
+            bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
+            showButtons(bot, message.chat.id)
 
     def calcular(message):
         loadData(message.chat.id, dicc_temp['dicc_path'][message.chat.id])
@@ -530,13 +536,13 @@ def botactions(bot):
             dicc_temp['calculo'][message.chat.id][amigo]['debido'] = 0
             dicc_temp['calculo'][message.chat.id][amigo]['diff'] = 0
 
-        '''#Calculo lo debido y lo pagado
+        #Calculo lo debido y lo pagado
         for gasto in dicc_data[message.chat.id]['gastos']:
             dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += int(gasto['cantidad']) #Actualizo todo lo pagado
             for participante in gasto['participantes']:
                 dicc_temp['calculo'][message.chat.id][participante]['debido'] += round(float(gasto['cantidad'])/(len(gasto['participantes'])),2) #Actualizo todo lo debido
 
-        dicc_temp['listas'][message.chat.id] = [[[], []], [[], []], [0, '']] #Inicializamos listas    
+        dicc_temp['listas'][message.chat.id] = [[[], []], [[], []], ''] #Inicializamos listas    
         #0 RECIBIR, 1 PAGAR, 2 ÍNDICE Y TEXTO SEGUNDA LISTA (EL DE LA PRIMERA LO VOY SACANDO DEL FOR)
 
         #Calculo las diferencias
@@ -550,17 +556,29 @@ def botactions(bot):
                 dicc_temp['listas'][message.chat.id][1][1].append(amigo)
 
         #indice = dicc_temp['listas'][message.chat.id][2][0]
-        for recibir in dicc_temp['listas'][message.chat.id][0][0]:
-            if abs(recibir) > dicc_temp['listas'][message.chat.id][1][0][dicc_temp['listas'][message.chat.id][2][0]]:
-                while abs(recibir) > dicc_temp['listas'][message.chat.id][1][0][dicc_temp['listas'][message.chat.id][2][0]]: #Comparo el primer elemento con por donde va el índice de la segunda lista
-                    dicc_temp['listas'][message.chat.id][2][1] += dicc_temp['listas'][message.chat.id][1][1][dicc_temp['listas'][message.chat.id][2][0]] \
-                        + ' debe ' + dicc_temp['listas'][message.chat.id][1][0][dicc_temp['listas'][message.chat.id][2][0]] \
-                        + '  euros a ' + dicc_temp['listas'][message.chat.id][0][1][dicc_temp['listas'][message.chat.id][0][0].index(recibir) + '\n']
-                    dicc_temp['listas'][message.chat.id][2][0] += 1
-            else:
-                while restante!=0
-            
-        print(dicc_temp)'''
+        j = 0
+        for i in range(len(dicc_temp['listas'][message.chat.id][0][0])):
+            while abs(dicc_temp['listas'][message.chat.id][0][0][i]) >= dicc_temp['listas'][message.chat.id][1][0][j]: #Mientras el dinero del pagador sea menor que el del que recibe.
+                dicc_temp['listas'][message.chat.id][2] += \
+                    dicc_temp['listas'][message.chat.id][1][1][j] + \
+                    ' debe ' + str(round(dicc_temp['listas'][message.chat.id][1][0][j]),2) + \
+                    '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
+                dicc_temp['listas'][message.chat.id][0][0][i] += dicc_temp['listas'][message.chat.id][1][0][j] # Actualizo el dinero del que recibe.
+
+                if (j <= len(dicc_temp['listas'][message.chat.id][0][0])):
+                    j += 1 #Subo indice de los pagadores
+
+            if abs(dicc_temp['listas'][message.chat.id][0][0][i]) < dicc_temp['listas'][message.chat.id][1][0][j] and j<len(dicc_temp['listas'][message.chat.id][0][0]):
+                dicc_temp['listas'][message.chat.id][1][0][j] += dicc_temp['listas'][message.chat.id][0][0][i]
+
+                dicc_temp['listas'][message.chat.id][2] += \
+                    dicc_temp['listas'][message.chat.id][1][1][j] + \
+                    ' debe ' + str(round(dicc_temp['listas'][message.chat.id][1][0][j]), 2) + \
+                    '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
+
+        bot.send_message(message.chat.id, '<b>Lista de pagos:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
+        showButtons(bot, message.chat.id)
+
     @bot.message_handler(commands=['▪️OCULTAR_BOTONES▪️'])
     def cmd_hideButtons(message):
         botones = ReplyKeyboardRemove()
