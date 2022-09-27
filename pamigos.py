@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from lib2to3.pygram import pattern_grammar
 import telebot
 from time import sleep
 from os import remove
@@ -22,6 +23,7 @@ dicc_temp['dicc_gasto'] = {}
 dicc_temp['dicc_gasto_nuevo'] = {}
 dicc_temp['num_gasto_borrar'] = {}
 dicc_temp['calculo'] = {}
+dicc_temp['listas'] = {}
 dicc_data = {}
 def bot_polling():
     print("Starting bot polling now")
@@ -260,7 +262,7 @@ def botactions(bot):
             msg = bot.send_message(message.chat.id, 'Selecciona evento para ver los amigos:', reply_markup=eventos)
             bot.register_next_step_handler(msg, verAmigosEvento)
         else:
-            bot.send_message(message.chat.id, '<b>No hay eventos para ver.\nCrea primero un evento.</b>', parse_mode="html")
+            bot.send_message(message.chat.id, '<b>No hay eventos para añadir amigos.\nCrea primero un evento.</b>', parse_mode="html")
             showButtons(bot, message.chat.id)
 
     def verAmigosEvento(message):
@@ -518,8 +520,8 @@ def botactions(bot):
 
     def calcular(message):
         loadData(message.chat.id, dicc_temp['dicc_path'][message.chat.id])
-        listado_amigos = list(dicc_data[message.chat.id]['amigos'])
-        listado_gastos = list(dicc_data[message.chat.id]['gastos']) #listado de gastos
+        #listado_amigos = list(dicc_data[message.chat.id]['amigos'])
+        #listado_gastos = list(dicc_data[message.chat.id]['gastos']) #listado de gastos
 
         dicc_temp['calculo'][message.chat.id] = {}
         for amigo in dicc_data[message.chat.id]['amigos']:
@@ -528,18 +530,37 @@ def botactions(bot):
             dicc_temp['calculo'][message.chat.id][amigo]['debido'] = 0
             dicc_temp['calculo'][message.chat.id][amigo]['diff'] = 0
 
-        #Calculo lo debido y lo pagado
+        '''#Calculo lo debido y lo pagado
         for gasto in dicc_data[message.chat.id]['gastos']:
             dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += int(gasto['cantidad']) #Actualizo todo lo pagado
             for participante in gasto['participantes']:
                 dicc_temp['calculo'][message.chat.id][participante]['debido'] += round(float(gasto['cantidad'])/(len(gasto['participantes'])),2) #Actualizo todo lo debido
 
+        dicc_temp['listas'][message.chat.id] = [[[], []], [[], []], [0, '']] #Inicializamos listas    
+        #0 RECIBIR, 1 PAGAR, 2 ÍNDICE Y TEXTO SEGUNDA LISTA (EL DE LA PRIMERA LO VOY SACANDO DEL FOR)
+
         #Calculo las diferencias
         for amigo in dicc_temp['calculo'][message.chat.id]: #Esto es un dicc y no una lista como los gastos.
             dicc_temp['calculo'][message.chat.id][amigo]['diff'] = dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado']
+            if dicc_temp['calculo'][message.chat.id][amigo]['diff'] < 0: #RECIBIR diff negativas
+                dicc_temp['listas'][message.chat.id][0][0].append(dicc_temp['calculo'][message.chat.id][amigo]['diff'])
+                dicc_temp['listas'][message.chat.id][0][1].append(amigo)
+            else: #PAGAR diff positivas
+                dicc_temp['listas'][message.chat.id][1][0].append(dicc_temp['calculo'][message.chat.id][amigo]['diff'])
+                dicc_temp['listas'][message.chat.id][1][1].append(amigo)
 
-
-
+        #indice = dicc_temp['listas'][message.chat.id][2][0]
+        for recibir in dicc_temp['listas'][message.chat.id][0][0]:
+            if abs(recibir) > dicc_temp['listas'][message.chat.id][1][0][dicc_temp['listas'][message.chat.id][2][0]]:
+                while abs(recibir) > dicc_temp['listas'][message.chat.id][1][0][dicc_temp['listas'][message.chat.id][2][0]]: #Comparo el primer elemento con por donde va el índice de la segunda lista
+                    dicc_temp['listas'][message.chat.id][2][1] += dicc_temp['listas'][message.chat.id][1][1][dicc_temp['listas'][message.chat.id][2][0]] \
+                        + ' debe ' + dicc_temp['listas'][message.chat.id][1][0][dicc_temp['listas'][message.chat.id][2][0]] \
+                        + '  euros a ' + dicc_temp['listas'][message.chat.id][0][1][dicc_temp['listas'][message.chat.id][0][0].index(recibir) + '\n']
+                    dicc_temp['listas'][message.chat.id][2][0] += 1
+            else:
+                while restante!=0
+            
+        print(dicc_temp)'''
     @bot.message_handler(commands=['▪️OCULTAR_BOTONES▪️'])
     def cmd_hideButtons(message):
         botones = ReplyKeyboardRemove()
