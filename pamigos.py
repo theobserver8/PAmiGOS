@@ -191,12 +191,17 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
     
     def dialogBorrarEvento(message):
-        dicc_temp['dicc_evento'][message.chat.id] = message.text
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.row('CONFIRMAR')
-        markup.row('CANCELAR')
-        msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
-        bot.register_next_step_handler(msg, borradoFinalEvento)
+        lista = listar_eventos(message.chat.id)
+        if message.text in lista:
+            dicc_temp['dicc_evento'][message.chat.id] = message.text
+            markup = ReplyKeyboardMarkup(resize_keyboard=True)
+            markup.row('CONFIRMAR')
+            markup.row('CANCELAR')
+            msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
+            bot.register_next_step_handler(msg, borradoFinalEvento)
+        else:
+            bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
     
     def borradoFinalEvento(message):
         if message.text == 'CONFIRMAR':
@@ -228,13 +233,18 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
     
     def nuevoAmigoEvento(message):
-        dicc_temp['dicc_evento'][message.chat.id] = message.text
-        path = filenameToPath(message)
-        loadData(message.chat.id, path)
-        dicc_temp['dicc_path'][message.chat.id] = path
-        markup = ForceReply()
-        msg = bot.send_message(message.chat.id, 'Introduce el nombre del amigo:', reply_markup=markup)
-        bot.register_next_step_handler(msg, leerAmigo)
+        lista = listar_eventos(message.chat.id)
+        if message.chat.id in lista:
+            dicc_temp['dicc_evento'][message.chat.id] = message.text
+            path = filenameToPath(message)
+            loadData(message.chat.id, path)
+            dicc_temp['dicc_path'][message.chat.id] = path
+            markup = ForceReply()
+            msg = bot.send_message(message.chat.id, 'Introduce el nombre del amigo:', reply_markup=markup)
+            bot.register_next_step_handler(msg, leerAmigo)
+        else:
+            bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def leerAmigo(message):
         dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
@@ -298,22 +308,29 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def borrarAmigosEvento(message):
-        dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
-        path = filenameToPath(message)
-        loadData(message.chat.id, path)
-        dicc_temp['dicc_path'][message.chat.id] = path #Guardo la ruta, con el chat id. Para acceder luego al borrado del amigo.
-        lista_amigos = dicc_data[message.chat.id]['amigos']
-        if len(lista_amigos):
-            botones = ReplyKeyboardMarkup(resize_keyboard=True)
-            long_list = len(lista_amigos)
-            botones = agrupar_botones(long_list, lista_amigos, botones)
-            msg = bot.send_message(message.chat.id, 'Selecciona amigo a borrar:', reply_markup=botones)
-            bot.register_next_step_handler(msg, dialogBorrarAmigo)
+        lista_eventos = listar_eventos(message.chat.id)
+        if message.text in lista_eventos:
+            dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
+            path = filenameToPath(message)
+            loadData(message.chat.id, path)
+            dicc_temp['dicc_path'][message.chat.id] = path #Guardo la ruta, con el chat id. Para acceder luego al borrado del amigo.
+            lista_amigos = dicc_data[message.chat.id]['amigos']
+            if len(lista_amigos):
+                botones = ReplyKeyboardMarkup(resize_keyboard=True)
+                long_list = len(lista_amigos)
+                botones = agrupar_botones(long_list, lista_amigos, botones)
+                msg = bot.send_message(message.chat.id, 'Selecciona amigo a borrar:', reply_markup=botones)
+                bot.register_next_step_handler(msg, dialogBorrarAmigo)
+            else:
+                bot.send_message(message.chat.id, '<b>No hay amigos para borrar en este evento.</b>', parse_mode="html")
+                showButtons(bot, message.chat.id)
         else:
-            bot.send_message(message.chat.id, '<b>No hay amigos para borrar en este evento.</b>', parse_mode="html")
-            showButtons(bot, message.chat.id)
+            bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def dialogBorrarAmigo(message):
+        #lista = listar_eventos(message.chat.id)
+        #if (lista.find(message)) != -1:
         dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
         markup.row('CONFIRMAR')
@@ -350,22 +367,27 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def nuevoGastoEvento(message):
-        dicc_temp['dicc_evento'][message.chat.id] = message.text
-        path = filenameToPath(message)
-        loadData(message.chat.id, path)
-        listado = list(dicc_data[message.chat.id]['amigos']) #Hago una copia de la lista, porque sino modifico la original
-        dicc_temp['dicc_path'][message.chat.id] = path
-        dicc_temp['dicc_gasto'][message.chat.id] = {}
-        dicc_temp['amigos'][message.chat.id] = listado
-        if len(listado):
-            amigos = ReplyKeyboardMarkup(resize_keyboard=True)
-            long_list = len(listado)
-            amigos = agrupar_botones(long_list, listado, amigos)
-            msg = bot.send_message(message.chat.id, 'Quién ha pagado este gasto?', reply_markup=amigos)
-            bot.register_next_step_handler(msg, leerPagadorPedirConcepto)
+        lista = listar_eventos(message.chat.id)
+        if message.text in lista:
+            dicc_temp['dicc_evento'][message.chat.id] = message.text
+            path = filenameToPath(message)
+            loadData(message.chat.id, path)
+            listado = list(dicc_data[message.chat.id]['amigos']) #Hago una copia de la lista, porque sino modifico la original
+            dicc_temp['dicc_path'][message.chat.id] = path
+            dicc_temp['dicc_gasto'][message.chat.id] = {}
+            dicc_temp['amigos'][message.chat.id] = listado
+            if len(listado):
+                amigos = ReplyKeyboardMarkup(resize_keyboard=True)
+                long_list = len(listado)
+                amigos = agrupar_botones(long_list, listado, amigos)
+                msg = bot.send_message(message.chat.id, 'Quién ha pagado este gasto?', reply_markup=amigos)
+                bot.register_next_step_handler(msg, leerPagadorPedirConcepto)
+            else:
+                bot.send_message(message.chat.id, '<b>No hay ningún amigo en el evento!</b>', parse_mode="html")
+                showButtons(bot, message.chat.id)
         else:
-            bot.send_message(message.chat.id, '<b>No hay ningún amigo en el evento!</b>', parse_mode="html")
-            showButtons(bot, message.chat.id)
+            bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def leerPagadorPedirConcepto(message):
         dicc_temp['dicc_gasto'][message.chat.id]['pagador'] = message.text
@@ -423,26 +445,31 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def verGastosEvento(message):
-        dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
-        path = filenameToPath(message)
-        loadData(message.chat.id, path)
-        listado = dicc_data[message.chat.id]['gastos']
-        if len(listado):
-            texto = ''
-            for n in listado:
-                texto += 'Evento nº' + str(listado.index(n)+1) + ':\n'
-                texto += 'Pagador: ' + n['pagador'] + '\n'
-                texto += 'Concepto: ' + n['concepto'] + '\n'
-                texto += 'Cantidad: ' + str(n['cantidad']) + '\n'
-                texto += 'Participantes: '
-                for i in n['participantes']:
-                    texto += i + ', '
-                texto = texto[:-2]
-                texto += '\n\n'
-            bot.send_message(message.chat.id, '<b>Lista de gastos:</b>\n\n' + texto, parse_mode="html")
+        lista = listar_eventos(message.chat.id)
+        if message.text in lista:
+            dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
+            path = filenameToPath(message)
+            loadData(message.chat.id, path)
+            listado = dicc_data[message.chat.id]['gastos']
+            if len(listado):
+                texto = ''
+                for n in listado:
+                    texto += 'Evento nº' + str(listado.index(n)+1) + ':\n'
+                    texto += 'Pagador: ' + n['pagador'] + '\n'
+                    texto += 'Concepto: ' + n['concepto'] + '\n'
+                    texto += 'Cantidad: ' + str(n['cantidad']) + '\n'
+                    texto += 'Participantes: '
+                    for i in n['participantes']:
+                        texto += i + ', '
+                    texto = texto[:-2]
+                    texto += '\n\n'
+                bot.send_message(message.chat.id, '<b>Lista de gastos:</b>\n\n' + texto, parse_mode="html")
+            else:
+                bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
+            showButtons(bot, message.chat.id)
         else:
-            bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
-        showButtons(bot, message.chat.id)
+            bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     @bot.message_handler(commands='BORRARgasto')
     def cmd_borrarGasto(message):
@@ -458,32 +485,37 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
     
     def borrarGastoEvento(message):
-        dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
-        path = filenameToPath(message)
-        dicc_temp['dicc_path'][message.chat.id] = path
-        loadData(message.chat.id, path)
-        listado = dicc_data[message.chat.id]['gastos']
-        if len(listado):
-            texto = ''
-            for n in listado:
-                texto += 'Evento nº' + str(listado.index(n)+1) + ':\n'
-                texto += 'Pagador: ' + n['pagador'] + '\n'
-                texto += 'Concepto: ' + n['concepto'] + '\n'
-                texto += 'Cantidad: ' + str(n['cantidad']) + '\n'
-                texto += 'Participantes: '
-                for i in n['participantes']:
-                    texto += i + ', '
-                texto = texto[:-2]
-                texto += '\n\n'
-            gastos = ReplyKeyboardMarkup(resize_keyboard=True)
-            long_list = len(listado)
-            lista_numeros = createList(long_list) #Esta lista está pasa de int -> str.
-            gastos = agrupar_botones(long_list, lista_numeros, gastos)
-            msg = bot.send_message(message.chat.id, 'Selecciona el número del gasto a borrar:\n\n' + texto, reply_markup=gastos)
-            bot.register_next_step_handler(msg, dialogBorrarGasto)
+        lista = listar_eventos(message.chat.id)
+        if message.text in lista:
+            dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
+            path = filenameToPath(message)
+            dicc_temp['dicc_path'][message.chat.id] = path
+            loadData(message.chat.id, path)
+            listado = dicc_data[message.chat.id]['gastos']
+            if len(listado):
+                texto = ''
+                for n in listado:
+                    texto += 'Evento nº' + str(listado.index(n)+1) + ':\n'
+                    texto += 'Pagador: ' + n['pagador'] + '\n'
+                    texto += 'Concepto: ' + n['concepto'] + '\n'
+                    texto += 'Cantidad: ' + str(n['cantidad']) + '\n'
+                    texto += 'Participantes: '
+                    for i in n['participantes']:
+                        texto += i + ', '
+                    texto = texto[:-2]
+                    texto += '\n\n'
+                gastos = ReplyKeyboardMarkup(resize_keyboard=True)
+                long_list = len(listado)
+                lista_numeros = createList(long_list) #Esta lista está pasa de int -> str.
+                gastos = agrupar_botones(long_list, lista_numeros, gastos)
+                msg = bot.send_message(message.chat.id, 'Selecciona el número del gasto a borrar:\n\n' + texto, reply_markup=gastos)
+                bot.register_next_step_handler(msg, dialogBorrarGasto)
+            else:
+                bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
+                showButtons(bot, message.chat.id)
         else:
-            bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
-            showButtons(bot, message.chat.id)
+            bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def dialogBorrarGasto(message):
         dicc_temp['num_gasto_borrar'][message.chat.id] = message.text
@@ -515,20 +547,25 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def dialogCalcular(message):
-        dicc_temp['dicc_evento'][message.chat.id] = message.text
-        path = filenameToPath(message)
-        dicc_temp['dicc_path'][message.chat.id] = path
-        loadData(message.chat.id, path)
-        listado = dicc_data[message.chat.id]['gastos']
-        if len(listado):
-            botones = ReplyKeyboardMarkup(resize_keyboard=True)
-            botones.row('CALCULAR')
-            botones.row('CANCELAR')
-            msg = bot.send_message(message.chat.id, 'Confirma el cálculo de la cuenta y mostraré los distintos pagos a realizar.', reply_markup=botones)
-            bot.register_next_step_handler(msg, calcular)
-        else:      
-            bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
-            showButtons(bot, message.chat.id)
+        lista = listar_eventos(message.chat.id)
+        if message.text in lista:
+            dicc_temp['dicc_evento'][message.chat.id] = message.text
+            path = filenameToPath(message)
+            dicc_temp['dicc_path'][message.chat.id] = path
+            loadData(message.chat.id, path)
+            listado = dicc_data[message.chat.id]['gastos']
+            if len(listado):
+                botones = ReplyKeyboardMarkup(resize_keyboard=True)
+                botones.row('CALCULAR')
+                botones.row('CANCELAR')
+                msg = bot.send_message(message.chat.id, 'Confirma el cálculo de la cuenta y mostraré los distintos pagos a realizar.', reply_markup=botones)
+                bot.register_next_step_handler(msg, calcular)
+            else:      
+                bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
+                showButtons(bot, message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea  
 
     def calcular(message):
         loadData(message.chat.id, dicc_temp['dicc_path'][message.chat.id])
