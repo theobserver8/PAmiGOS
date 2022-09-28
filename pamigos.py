@@ -95,6 +95,12 @@ def createList(n):
         lst.append(i)
     return(lst)
 
+def truncate(numero):
+    cadena = str(numero)
+    cadena1 = cadena.split('.')[0]
+    cadena2 = cadena.split('.')[1][0:2]
+    return float(cadena1 + '.' + cadena2)
+
 def loadData(chatid, path):
     f = open(path) 
     datos = json.load(f)
@@ -540,14 +546,18 @@ def botactions(bot):
         for gasto in dicc_data[message.chat.id]['gastos']:
             dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += int(gasto['cantidad']) #Actualizo todo lo pagado
             for participante in gasto['participantes']:
-                dicc_temp['calculo'][message.chat.id][participante]['debido'] += round(float(gasto['cantidad'])/(len(gasto['participantes'])),2) #Actualizo todo lo debido
+                dicc_temp['calculo'][message.chat.id][participante]['debido'] += float(gasto['cantidad'])/(len(gasto['participantes'])) #Actualizo todo lo debido
 
         dicc_temp['listas'][message.chat.id] = [[[], []], [[], []], ''] #Inicializamos listas    
-        #0 RECIBIR, 1 PAGAR, 2 ÍNDICE Y TEXTO SEGUNDA LISTA (EL DE LA PRIMERA LO VOY SACANDO DEL FOR)
-
+        #0 RECIBIR, 1 PAGAR, 2 TEXTO SEGUNDA LISTA (EL DE LA PRIMERA LO VOY SACANDO DEL FOR)
         #Calculo las diferencias
         for amigo in dicc_temp['calculo'][message.chat.id]: #Esto es un dicc y no una lista como los gastos.
-            dicc_temp['calculo'][message.chat.id][amigo]['diff'] = dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado']
+            #TRUNCO a 2 decimales
+            if dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado'] == 0:
+                dicc_temp['calculo'][message.chat.id][amigo]['diff'] = dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado']
+            else:
+                dicc_temp['calculo'][message.chat.id][amigo]['diff'] = truncate(dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado'])
+            
             if dicc_temp['calculo'][message.chat.id][amigo]['diff'] < 0: #RECIBIR diff negativas
                 dicc_temp['listas'][message.chat.id][0][0].append(dicc_temp['calculo'][message.chat.id][amigo]['diff'])
                 dicc_temp['listas'][message.chat.id][0][1].append(amigo)
@@ -558,23 +568,21 @@ def botactions(bot):
         #indice = dicc_temp['listas'][message.chat.id][2][0]
         j = 0
         for i in range(len(dicc_temp['listas'][message.chat.id][0][0])):
-            while abs(dicc_temp['listas'][message.chat.id][0][0][i]) >= dicc_temp['listas'][message.chat.id][1][0][j]: #Mientras el dinero del pagador sea menor que el del que recibe.
-                dicc_temp['listas'][message.chat.id][2] += \
-                    dicc_temp['listas'][message.chat.id][1][1][j] + \
-                    ' debe ' + str(round(dicc_temp['listas'][message.chat.id][1][0][j]),2) + \
-                    '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
-                dicc_temp['listas'][message.chat.id][0][0][i] += dicc_temp['listas'][message.chat.id][1][0][j] # Actualizo el dinero del que recibe.
+            while dicc_temp['listas'][message.chat.id][0][0][i] != 0:
+                if abs(dicc_temp['listas'][message.chat.id][0][0][i]) >= dicc_temp['listas'][message.chat.id][1][0][j]:
+                    dicc_temp['listas'][message.chat.id][2] += \
+                        dicc_temp['listas'][message.chat.id][1][1][j] + \
+                        ' debe ' + str("{0:.2f}".format(dicc_temp['listas'][message.chat.id][1][0][j])) + \
+                        '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
+                    dicc_temp['listas'][message.chat.id][0][0][i] += dicc_temp['listas'][message.chat.id][1][0][j] #Actualizo cantidad lista 1    
+                else:
+                    dicc_temp['listas'][message.chat.id][2] += \
+                        dicc_temp['listas'][message.chat.id][0][1][i] + \
+                        ' debe ' + str("{0:.2f}".format(dicc_temp['listas'][message.chat.id][0][0][i])) + \
+                        '€ a ' + dicc_temp['listas'][message.chat.id][1][1][j] + '\n'
+                    dicc_temp['listas'][message.chat.id][1][0][j] += dicc_temp['listas'][message.chat.id][0][0][i] #Actualizo cantidad lista 2
 
-                if (j <= len(dicc_temp['listas'][message.chat.id][0][0])):
-                    j += 1 #Subo indice de los pagadores
-
-            if abs(dicc_temp['listas'][message.chat.id][0][0][i]) < dicc_temp['listas'][message.chat.id][1][0][j] and j<len(dicc_temp['listas'][message.chat.id][0][0]):
-                dicc_temp['listas'][message.chat.id][1][0][j] += dicc_temp['listas'][message.chat.id][0][0][i]
-
-                dicc_temp['listas'][message.chat.id][2] += \
-                    dicc_temp['listas'][message.chat.id][1][1][j] + \
-                    ' debe ' + str(round(dicc_temp['listas'][message.chat.id][1][0][j]), 2) + \
-                    '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
+                j += 1
 
         bot.send_message(message.chat.id, '<b>Lista de pagos:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
         showButtons(bot, message.chat.id)
