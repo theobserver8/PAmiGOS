@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from lib2to3.pygram import pattern_grammar
 import telebot
 from time import sleep
 from os import remove
@@ -68,7 +67,9 @@ def agrupar_botones(long_list, lista, botones):
     return botones
 
 def createFilenameToPath(message):
-    nombre = str(message.chat.id) + '_' + str(message.text)
+    mensaje = message.text.replace(' ', '-')
+    mensaje = mensaje.replace('_', '-')
+    nombre = str(message.chat.id) + '_' + str(mensaje)
     extension = '.json'
     path = DIRECTORIO_RAIZ + '/BBDD/' + nombre + extension #Tengo previamente una carpeta BBDD que almacena los EVENTOS
     return path
@@ -124,17 +125,17 @@ def botactions(bot):
 
     @bot.message_handler(commands=['☕️KO-FI☕️'])
     def cmd_kofi(message):
-        texto = 'Si te ha gustado mi trabajo y te resulta útil, apoyando con un café ayudarás al desarrollo de PAmiGOS.\n'
+        texto = 'Si te ha gustado mi bot y te resulta útil, ayudando con un café contribuirás al mantenimiento y desarrollo de PAmiGOS.\n'
         texto += '<a href= "https://ko-fi.com/theobserver8">https://ko-fi.com/theobserver8</a>'
         bot.send_message(message.chat.id, texto, parse_mode="html")
 
     @bot.message_handler(commands=['AYUDA❓'])
     def cmd_help(message):
         botones = ReplyKeyboardRemove()
-        texto = '<b>📝 <u>EVENTO</u> 📝</b>: Nombre del evento organizado.\nEjemplo: Viaje a Madrid.'
+        texto = '<b>📝 <u>EVENTO</u> 📝</b>: Nombre del evento organizado.\nEjemplo: Madrid.'
+        texto += '\n\n<b>🚶🏼‍♂️ <u>AMIGOS</u> 🚶🏻‍♀️</b>: Amigos que forman parte de ese evento. Añade tantos como desees, escribiendo su nombre directamente.'
         texto += '\n\n<b>💰 <u>GASTOS</u> 💰</b>: Distintos gastos del evento.\nEjemplo: Alojamiento, gasolina, entradas, comida...'
-        texto += '\n\n<b>🚶🏼‍♂️ <u>AMIGOS</u> 🚶🏻‍♀️</b>: Amigos que pueden formar parte de ese evento. No es una mención, escribe su nombre directamente.'
-        texto += '\n\n<b>💶 <u>CALCULAR</u> 💶</b>: Muestra los pagos a realizar entre vosotros para ajustar las cuentas.'
+        texto += '\n\n<b>💶 <u>CALCULAR</u> 💶</b>: Muestra los pagos a realizar entre vosotros para que las cuentas queden ajustadas.\nTambién es posible mostrar los saldos, que indican lo que cada uno tiene (de forma independiente) que recibir o pagar de forma independiente.'
         texto += '\n\nUsa este comando /inicio para empezar...'
         bot.send_message(message.chat.id, texto, parse_mode="html", reply_markup=botones)
 
@@ -234,13 +235,13 @@ def botactions(bot):
     
     def nuevoAmigoEvento(message):
         lista = listar_eventos(message.chat.id)
-        if message.chat.id in lista:
+        if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
             path = filenameToPath(message)
             loadData(message.chat.id, path)
             dicc_temp['dicc_path'][message.chat.id] = path
             markup = ForceReply()
-            msg = bot.send_message(message.chat.id, 'Introduce el nombre del amigo:', reply_markup=markup)
+            msg = bot.send_message(message.chat.id, 'Introduce el nombre de tu amigo:', reply_markup=markup)
             bot.register_next_step_handler(msg, leerAmigo)
         else:
             bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
@@ -301,7 +302,7 @@ def botactions(bot):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
             long_list = len(lista)
             eventos = agrupar_botones(long_list, lista, eventos)
-            msg = bot.send_message(message.chat.id, 'Selecciona evento para ver los amigos:', reply_markup=eventos)
+            msg = bot.send_message(message.chat.id, 'Selecciona evento para borrar amigos:', reply_markup=eventos)
             bot.register_next_step_handler(msg, borrarAmigosEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos para borrar amigos.\nCrea primero un evento.</b>', parse_mode="html")
@@ -360,7 +361,7 @@ def botactions(bot):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
             long_list = len(lista)
             eventos = agrupar_botones(long_list, lista, eventos)
-            msg = bot.send_message(message.chat.id, 'Selecciona el evento al que añadir gastos:', reply_markup=eventos)
+            msg = bot.send_message(message.chat.id, 'Selecciona el evento al que añadir gasto:', reply_markup=eventos)
             bot.register_next_step_handler(msg, nuevoGastoEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos para añadir gastos.\nCrea primero un evento.</b>', parse_mode="html")
@@ -380,7 +381,7 @@ def botactions(bot):
                 amigos = ReplyKeyboardMarkup(resize_keyboard=True)
                 long_list = len(listado)
                 amigos = agrupar_botones(long_list, listado, amigos)
-                msg = bot.send_message(message.chat.id, 'Quién ha pagado este gasto?', reply_markup=amigos)
+                msg = bot.send_message(message.chat.id, '¿Quién ha pagado este gasto?', reply_markup=amigos)
                 bot.register_next_step_handler(msg, leerPagadorPedirConcepto)
             else:
                 bot.send_message(message.chat.id, '<b>No hay ningún amigo en el evento!</b>', parse_mode="html")
@@ -404,17 +405,18 @@ def botactions(bot):
         bot.register_next_step_handler(msg, leerCantidadPedirParticipantes)
 
     def leerCantidadPedirParticipantes(message):
-        dicc_temp['dicc_gasto'][message.chat.id]['cantidad'] = message.text
-        if not message.text.isdigit():
-            msg = bot.send_message(message.chat.id, 'ERROR: La cantidad debe de ser un número.\nIntroduce la cantidad pagada:')
-            bot.register_next_step_handler(msg, leerCantidadPedirParticipantes) #Volvemos a ejecutar esta función
-        else:
+        cantidad = message.text.replace(',', '.')
+        dicc_temp['dicc_gasto'][message.chat.id]['cantidad'] = cantidad
+        if message.text.replace('.', '', 1).isdigit() or message.text.replace(',', '', 1).isdigit():
             dicc_temp['amigos'][message.chat.id].append('FIN 🔚') #Añado un elemento llamado FIN
             participantes = ReplyKeyboardMarkup(resize_keyboard=True)
             long_list = len(dicc_temp['amigos'][message.chat.id])
             participantes = agrupar_botones(long_list, dicc_temp['amigos'][message.chat.id], participantes)
-            msg = bot.send_message(message.chat.id, 'Selecciona los participantes:', reply_markup=participantes)
-            bot.register_next_step_handler(msg, pedirParticipantesGuardarGasto)
+            msg = bot.send_message(message.chat.id, 'Selecciona los amigos que han participado:', reply_markup=participantes)
+            bot.register_next_step_handler(msg, pedirParticipantesGuardarGasto)        
+        else:
+            msg = bot.send_message(message.chat.id, 'ERROR: La cantidad debe de ser un número.\nIntroduce la cantidad pagada:')
+            bot.register_next_step_handler(msg, leerCantidadPedirParticipantes) #Volvemos a ejecutar esta función
 
     def pedirParticipantesGuardarGasto(message):
         if message.text == 'FIN 🔚':
@@ -428,7 +430,7 @@ def botactions(bot):
             participantes_restantes = ReplyKeyboardMarkup(resize_keyboard=True)
             long_list = len(dicc_temp['amigos'][message.chat.id]) #Vuelvo a mostrar el listado
             participantes_restantes = agrupar_botones(long_list, dicc_temp['amigos'][message.chat.id], participantes_restantes)
-            msg = bot.send_message(message.chat.id, 'Selecciona los participantes:', reply_markup=participantes_restantes)
+            msg = bot.send_message(message.chat.id, 'Selecciona los amigos que han participado:', reply_markup=participantes_restantes)
             bot.register_next_step_handler(msg, pedirParticipantesGuardarGasto) #Recurro a esta función
 
     @bot.message_handler(commands='VERgastos')
@@ -558,7 +560,7 @@ def botactions(bot):
                 botones = ReplyKeyboardMarkup(resize_keyboard=True)
                 botones.row('SALDOS', 'PAGOS')
                 botones.row('CANCELAR')
-                msg = bot.send_message(message.chat.id, 'Confirma el cálculo de la cuenta y mostraré los distintos pagos a realizar.', reply_markup=botones)
+                msg = bot.send_message(message.chat.id, 'Selecciona si quieres ver los saldos individuales o los pagos entre vosotros para cuadrar las cuentas.', reply_markup=botones)
                 bot.register_next_step_handler(msg, calcular)
             else:      
                 bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
@@ -627,7 +629,7 @@ def botactions(bot):
 
                     j += 1
 
-            bot.send_message(message.chat.id, '<b>Lista de pagos:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
+            bot.send_message(message.chat.id, '<b>Lista de pagos a realizar entre vosotros para cuadrar las cuentas:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
             showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['▪️OCULTAR_BOTONES▪️'])
