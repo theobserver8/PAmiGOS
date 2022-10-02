@@ -571,8 +571,6 @@ def botactions(bot):
 
     def calcular(message):
         loadData(message.chat.id, dicc_temp['dicc_path'][message.chat.id])
-        #listado_amigos = list(dicc_data[message.chat.id]['amigos'])
-        #listado_gastos = list(dicc_data[message.chat.id]['gastos']) #listado de gastos
 
         dicc_temp['calculo'][message.chat.id] = {}
         for amigo in dicc_data[message.chat.id]['amigos']:
@@ -610,7 +608,6 @@ def botactions(bot):
             bot.send_message(message.chat.id, '<b>El saldo de cada amigo es:\n(Negativo) -> </b> le deben dinero.\n<b>(Positivo) -> </b> tiene que pagar.\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
             showButtons(bot, message.chat.id)
         else:
-        #indice = dicc_temp['listas'][message.chat.id][2][0]
             j = 0
             for i in range(len(dicc_temp['listas'][message.chat.id][0][0])):
                 while dicc_temp['listas'][message.chat.id][0][0][i] != 0:
@@ -619,15 +616,17 @@ def botactions(bot):
                             dicc_temp['listas'][message.chat.id][1][1][j] + \
                             ' debe ' + str("{0:.2f}".format(dicc_temp['listas'][message.chat.id][1][0][j])) + \
                             '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
-                        dicc_temp['listas'][message.chat.id][0][0][i] += dicc_temp['listas'][message.chat.id][1][0][j] #Actualizo cantidad lista 1    
+                        dicc_temp['listas'][message.chat.id][0][0][i] += dicc_temp['listas'][message.chat.id][1][0][j] #Actualizo cantidad lista 1
+                        dicc_temp['listas'][message.chat.id][0][0][i] = round(dicc_temp['listas'][message.chat.id][0][0][i], 2) #Redondear float a 2 decimales
+                        print(dicc_temp['listas'][message.chat.id][0][0][i])
+                        j += 1 #Solo aumento la j en este caso
                     else:
-                        dicc_temp['listas'][message.chat.id][2] += \
-                            dicc_temp['listas'][message.chat.id][0][1][i] + \
-                            ' debe ' + str("{0:.2f}".format(dicc_temp['listas'][message.chat.id][0][0][i])) + \
-                            '€ a ' + dicc_temp['listas'][message.chat.id][1][1][j] + '\n'
                         dicc_temp['listas'][message.chat.id][1][0][j] += dicc_temp['listas'][message.chat.id][0][0][i] #Actualizo cantidad lista 2
-
-                    j += 1
+                        dicc_temp['listas'][message.chat.id][2] += \
+                            dicc_temp['listas'][message.chat.id][1][1][j] + \
+                            ' debe ' + str("{0:.2f}".format(dicc_temp['listas'][message.chat.id][1][0][j])) + \
+                            '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
+                        dicc_temp['listas'][message.chat.id][0][0][i] = 0 #Actualizo cantidad lista 1
 
             bot.send_message(message.chat.id, '<b>Lista de pagos a realizar entre vosotros para cuadrar las cuentas:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
             showButtons(bot, message.chat.id)
