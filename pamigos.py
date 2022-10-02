@@ -197,7 +197,7 @@ def botactions(bot):
             dicc_temp['dicc_evento'][message.chat.id] = message.text
             markup = ReplyKeyboardMarkup(resize_keyboard=True)
             markup.row('CONFIRMAR')
-            markup.row('CANCELAR')
+            markup.row('/CANCELAR')
             msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
             bot.register_next_step_handler(msg, borradoFinalEvento)
         else:
@@ -335,7 +335,7 @@ def botactions(bot):
         dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
         markup.row('CONFIRMAR')
-        markup.row('CANCELAR')
+        markup.row('/CANCELAR')
         msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
         bot.register_next_step_handler(msg, borradoFinalAmigo)
     
@@ -523,7 +523,7 @@ def botactions(bot):
         dicc_temp['num_gasto_borrar'][message.chat.id] = message.text
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
         markup.row('CONFIRMAR')
-        markup.row('CANCELAR')
+        markup.row('/CANCELAR')
         msg = bot.send_message(message.chat.id, 'Confirma para borrar gasto <b>nº ' + message.text + '</b>', parse_mode="html", reply_markup=markup)
         bot.register_next_step_handler(msg, borradoFinalGasto)
 
@@ -559,7 +559,7 @@ def botactions(bot):
             if len(listado):
                 botones = ReplyKeyboardMarkup(resize_keyboard=True)
                 botones.row('SALDOS', 'PAGOS')
-                botones.row('CANCELAR')
+                botones.row('/CANCELAR')
                 msg = bot.send_message(message.chat.id, 'Selecciona si quieres ver los saldos individuales o los pagos entre vosotros para cuadrar las cuentas.', reply_markup=botones)
                 bot.register_next_step_handler(msg, calcular)
             else:      
@@ -607,7 +607,7 @@ def botactions(bot):
                 dicc_temp['listas'][message.chat.id][2] += '- ' + amigo + ': ' + str(dicc_temp['calculo'][message.chat.id][amigo]['diff']) + '€\n'
             bot.send_message(message.chat.id, '<b>El saldo de cada amigo es:\n(Negativo) -> </b> le deben dinero.\n<b>(Positivo) -> </b> tiene que pagar.\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
             showButtons(bot, message.chat.id)
-        else:
+        elif message.text == 'PAGOS':
             j = 0
             for i in range(len(dicc_temp['listas'][message.chat.id][0][0])):
                 while dicc_temp['listas'][message.chat.id][0][0][i] != 0:
@@ -618,7 +618,6 @@ def botactions(bot):
                             '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
                         dicc_temp['listas'][message.chat.id][0][0][i] += dicc_temp['listas'][message.chat.id][1][0][j] #Actualizo cantidad lista 1
                         dicc_temp['listas'][message.chat.id][0][0][i] = round(dicc_temp['listas'][message.chat.id][0][0][i], 2) #Redondear float a 2 decimales
-                        print(dicc_temp['listas'][message.chat.id][0][0][i])
                         j += 1 #Solo aumento la j en este caso
                     else:
                         dicc_temp['listas'][message.chat.id][1][0][j] += dicc_temp['listas'][message.chat.id][0][0][i] #Actualizo cantidad lista 2
@@ -629,6 +628,8 @@ def botactions(bot):
                         dicc_temp['listas'][message.chat.id][0][0][i] = 0 #Actualizo cantidad lista 1
 
             bot.send_message(message.chat.id, '<b>Lista de pagos a realizar entre vosotros para cuadrar las cuentas:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
+            showButtons(bot, message.chat.id)
+        else:
             showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['▪️OCULTAR_BOTONES▪️'])
