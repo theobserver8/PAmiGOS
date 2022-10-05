@@ -10,6 +10,8 @@ with open('config.json', 'r') as file:  config = json.load(file)
 BOT_TOKEN = config['TOKEN']['PAmiGOSbot']
 DIRECTORIO_RAIZ = config['ROOT_PATH']
 
+WAIT_MENUPPAL = 0.16
+WAIT_NAVEGACION = 0.08
 BOT_INTERVAL = 1
 BOT_TIMEOUT = 20
 
@@ -48,6 +50,7 @@ def bot_polling():
             break
 #--------------------------------------------------------------------------------------------------
 def showButtons(bot, chatid):
+    sleep(WAIT_MENUPPAL)
     botones = ReplyKeyboardMarkup(resize_keyboard=True)
     botones.row('/☕️KO-FI☕️', '/AYUDA❓')
     botones.row('/📝EVENTO📝', '/💰GASTOS💰')
@@ -96,12 +99,6 @@ def createList(n):
         lst.append(i)
     return(lst)
 
-def truncate(numero):
-    cadena = str(numero)
-    cadena1 = cadena.split('.')[0]
-    cadena2 = cadena.split('.')[1][0:2]
-    return float(cadena1 + '.' + cadena2)
-
 def loadData(chatid, path):
     f = open(path) 
     datos = json.load(f)
@@ -125,12 +122,14 @@ def botactions(bot):
 
     @bot.message_handler(commands=['☕️KO-FI☕️'])
     def cmd_kofi(message):
+        sleep(WAIT_NAVEGACION)
         texto = 'Si te ha gustado mi bot y te resulta útil, ayudando con un café contribuirás al mantenimiento y desarrollo de PAmiGOS.\n'
         texto += '<a href= "https://ko-fi.com/theobserver8">https://ko-fi.com/theobserver8</a>'
         bot.send_message(message.chat.id, texto, parse_mode="html")
 
     @bot.message_handler(commands=['AYUDA❓'])
     def cmd_help(message):
+        sleep(WAIT_NAVEGACION)
         botones = ReplyKeyboardRemove()
         texto = '<b>📝 <u>EVENTO</u> 📝</b>: Nombre del evento organizado.\nEjemplo: Madrid.'
         texto += '\n\n<b>🚶🏼‍♂️ <u>AMIGOS</u> 🚶🏻‍♀️</b>: Amigos que forman parte de ese evento. Añade tantos como desees, escribiendo su nombre directamente.'
@@ -149,11 +148,13 @@ def botactions(bot):
 
     @bot.message_handler(commands=['NUEVOevento'])
     def cmd_nuevoEvento(message):
+        sleep(WAIT_NAVEGACION)
         markup = ForceReply()
         msg = bot.send_message(message.chat.id, 'Vas a crear un nuevo evento.\nIntroduce el nombre:', reply_markup=markup)
         bot.register_next_step_handler(msg, crear_archivo)
 
     def crear_archivo(message):
+        sleep(WAIT_NAVEGACION)
         path = createFilenameToPath(message)
         try:
             archivo = open(path, "x")
@@ -170,6 +171,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['VEReventos'])
     def cmd_verEventos(message):
+        sleep(WAIT_NAVEGACION)
         listado = listar_eventos(message.chat.id)
         if len(listado):
             listado_lineas = ('\n - '.join(listado)) #Listado separado en líneas
@@ -180,6 +182,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['BORRARevento'])
     def cmd_borrarEvento(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -192,6 +195,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
     
     def dialogBorrarEvento(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
@@ -205,6 +209,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
     
     def borradoFinalEvento(message):
+        sleep(WAIT_NAVEGACION)
         if message.text == 'CONFIRMAR':
             path = filenameToPath(message)
             remove(path)
@@ -222,6 +227,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='NUEVOamigo')
     def cmd_nuevoAmigo(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -234,6 +240,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
     
     def nuevoAmigoEvento(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
@@ -261,6 +268,7 @@ def botactions(bot):
             bot.register_next_step_handler(msg, dialogAddAmigo)
 
     def dialogAddAmigo(message):
+        sleep(WAIT_NAVEGACION)
         if message.text == 'SI':
             markup = ForceReply()
             msg = bot.send_message(message.chat.id, 'Introduce el nombre del amigo:', reply_markup=markup)
@@ -271,6 +279,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='VERamigos')
     def cmd_verAmigos(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -283,6 +292,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def verAmigosEvento(message):
+        sleep(WAIT_NAVEGACION)
         dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
         path = filenameToPath(message)
         loadData(message.chat.id, path)
@@ -297,6 +307,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='BORRARamigo')
     def cmd_borrarAmigo(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -309,6 +320,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def borrarAmigosEvento(message):
+        sleep(WAIT_NAVEGACION)
         lista_eventos = listar_eventos(message.chat.id)
         if message.text in lista_eventos:
             dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
@@ -330,16 +342,21 @@ def botactions(bot):
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def dialogBorrarAmigo(message):
-        #lista = listar_eventos(message.chat.id)
-        #if (lista.find(message)) != -1:
-        dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.row('CONFIRMAR')
-        markup.row('/CANCELAR')
-        msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
-        bot.register_next_step_handler(msg, borradoFinalAmigo)
+        sleep(WAIT_NAVEGACION)
+        lista_amigos = dicc_data[message.chat.id]['amigos']
+        if message.text in lista_amigos:
+            dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
+            markup = ReplyKeyboardMarkup(resize_keyboard=True)
+            markup.row('CONFIRMAR')
+            markup.row('/CANCELAR')
+            msg = bot.send_message(message.chat.id, 'Confirma para borrar: <b>' + message.text + '</b>', parse_mode="html", reply_markup=markup)
+            bot.register_next_step_handler(msg, borradoFinalAmigo)
+        else:
+            bot.send_message(message.chat.id, 'Introducido nombre de amigo incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
     
     def borradoFinalAmigo(message):
+        sleep(WAIT_NAVEGACION)
         if message.text == 'CONFIRMAR':
             dicc_data[message.chat.id]['amigos'].remove(dicc_temp['dicc_amigo_temp'][message.chat.id]) #Elimina amigo de la lista
             bot.send_message(message.chat.id, 'Amigo <b>' + dicc_temp['dicc_amigo_temp'][message.chat.id] + '</b> borrado!', parse_mode="html")
@@ -356,6 +373,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='NUEVOgasto')
     def cmd_nuevoGasto(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -368,6 +386,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def nuevoGastoEvento(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
@@ -391,6 +410,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def leerPagadorPedirConcepto(message):
+        sleep(WAIT_NAVEGACION)
         dicc_temp['dicc_gasto'][message.chat.id]['pagador'] = message.text
         dicc_temp['amigos'][message.chat.id].remove(message.text) #Elimino al pagador del listado de amigos a aparecer
         dicc_temp['dicc_gasto'][message.chat.id]['participantes'] = [message.text] #Añado el pagador a los participantes
@@ -399,12 +419,14 @@ def botactions(bot):
         bot.register_next_step_handler(msg, leerConceptoPedirCantidad)
 
     def leerConceptoPedirCantidad(message):
+        sleep(WAIT_NAVEGACION)
         dicc_temp['dicc_gasto'][message.chat.id]['concepto'] = message.text
         markup = ForceReply()
         msg = bot.send_message(message.chat.id, 'Introduce la cantidad pagada:', reply_markup=markup)
         bot.register_next_step_handler(msg, leerCantidadPedirParticipantes)
 
     def leerCantidadPedirParticipantes(message):
+        sleep(WAIT_NAVEGACION)
         cantidad = message.text.replace(',', '.')
         dicc_temp['dicc_gasto'][message.chat.id]['cantidad'] = cantidad
         if message.text.replace('.', '', 1).isdigit() or message.text.replace(',', '', 1).isdigit():
@@ -435,6 +457,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='VERgastos')
     def cmd_verGastos(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -447,6 +470,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def verGastosEvento(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
@@ -456,11 +480,11 @@ def botactions(bot):
             if len(listado):
                 texto = ''
                 for n in listado:
-                    texto += 'Evento nº' + str(listado.index(n)+1) + ':\n'
-                    texto += 'Pagador: ' + n['pagador'] + '\n'
-                    texto += 'Concepto: ' + n['concepto'] + '\n'
-                    texto += 'Cantidad: ' + str(n['cantidad']) + '\n'
-                    texto += 'Participantes: '
+                    texto += '<u><b>Evento nº' + str(listado.index(n)+1) + ':</b></u>\n'
+                    texto += '<b>·Pagador:</b> ' + n['pagador'] + '\n'
+                    texto += '<b>·Concepto:</b> ' + n['concepto'] + '\n'
+                    texto += '<b>·Cantidad:</b> ' + str(n['cantidad']).replace('.', ',') + '€\n'
+                    texto += '<b>·Participantes:</b> '
                     for i in n['participantes']:
                         texto += i + ', '
                     texto = texto[:-2]
@@ -475,6 +499,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='BORRARgasto')
     def cmd_borrarGasto(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -487,6 +512,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
     
     def borrarGastoEvento(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
@@ -520,14 +546,23 @@ def botactions(bot):
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def dialogBorrarGasto(message):
-        dicc_temp['num_gasto_borrar'][message.chat.id] = message.text
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.row('CONFIRMAR')
-        markup.row('/CANCELAR')
-        msg = bot.send_message(message.chat.id, 'Confirma para borrar gasto <b>nº ' + message.text + '</b>', parse_mode="html", reply_markup=markup)
-        bot.register_next_step_handler(msg, borradoFinalGasto)
+        sleep(WAIT_NAVEGACION)
+        listado = dicc_data[message.chat.id]['gastos']
+        long_list = len(listado)
+        lista_numeros = createList(long_list)
+        if message.text in lista_numeros:
+            dicc_temp['num_gasto_borrar'][message.chat.id] = message.text
+            markup = ReplyKeyboardMarkup(resize_keyboard=True)
+            markup.row('CONFIRMAR')
+            markup.row('/CANCELAR')
+            msg = bot.send_message(message.chat.id, 'Confirma para borrar gasto <b>nº ' + message.text + '</b>', parse_mode="html", reply_markup=markup)
+            bot.register_next_step_handler(msg, borradoFinalGasto)
+        else:
+            bot.send_message(message.chat.id, 'Introducido número de gasto incorrecto.\nUtiliza los botones.')
+            showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def borradoFinalGasto(message):
+        sleep(WAIT_NAVEGACION)
         if message.text == 'CONFIRMAR':
             dicc_data[message.chat.id]['gastos'].pop(int(dicc_temp['num_gasto_borrar'][message.chat.id])-1)
             bot.send_message(message.chat.id, 'Gasto <b>nº' + dicc_temp['num_gasto_borrar'][message.chat.id] + '</b> borrado!', parse_mode="html")            
@@ -549,6 +584,7 @@ def botactions(bot):
             showButtons(bot, message.chat.id)
 
     def dialogCalcular(message):
+        sleep(WAIT_NAVEGACION)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
@@ -578,22 +614,24 @@ def botactions(bot):
             dicc_temp['calculo'][message.chat.id][amigo]['pagado'] = 0  #Iniciamos a cero las cuentas
             dicc_temp['calculo'][message.chat.id][amigo]['debido'] = 0
             dicc_temp['calculo'][message.chat.id][amigo]['diff'] = 0
+            prueba = 0
 
         #Calculo lo debido y lo pagado
         for gasto in dicc_data[message.chat.id]['gastos']:
-            dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += int(gasto['cantidad']) #Actualizo todo lo pagado
+            #Hay que hacer la movida por los decimales. Ej. 23.75 entre 3 da 7.91666 que es 7.92. Vuelvo a multiplicar y redondeo para que cuadre con 23.76
+            dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += round(round(float(gasto['cantidad'])/(len(gasto['participantes'])), 2) * len(gasto['participantes']), 2) #Actualizo todo lo pagado
             for participante in gasto['participantes']:
-                dicc_temp['calculo'][message.chat.id][participante]['debido'] += float(gasto['cantidad'])/(len(gasto['participantes'])) #Actualizo todo lo debido
+                dicc_temp['calculo'][message.chat.id][participante]['debido'] += round(float(gasto['cantidad'])/(len(gasto['participantes'])), 2) #Actualizo todo lo debido
 
         dicc_temp['listas'][message.chat.id] = [[[], []], [[], []], ''] #Inicializamos listas    
         #0 RECIBIR, 1 PAGAR, 2 TEXTO SEGUNDA LISTA (EL DE LA PRIMERA LO VOY SACANDO DEL FOR)
         #Calculo las diferencias
         for amigo in dicc_temp['calculo'][message.chat.id]: #Esto es un dicc y no una lista como los gastos.
             #TRUNCO a 2 decimales
-            if dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado'] == 0:
-                dicc_temp['calculo'][message.chat.id][amigo]['diff'] = dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado']
+            if dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado'] == 0: #Por si alguien está como amigo pero no interviene.
+                dicc_temp['calculo'][message.chat.id][amigo]['diff'] = 0
             else:
-                dicc_temp['calculo'][message.chat.id][amigo]['diff'] = truncate(dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado'])
+                dicc_temp['calculo'][message.chat.id][amigo]['diff'] = round((dicc_temp['calculo'][message.chat.id][amigo]['debido']-dicc_temp['calculo'][message.chat.id][amigo]['pagado']), 2)
             
             if dicc_temp['calculo'][message.chat.id][amigo]['diff'] < 0: #RECIBIR diff negativas
                 dicc_temp['listas'][message.chat.id][0][0].append(dicc_temp['calculo'][message.chat.id][amigo]['diff'])
@@ -617,19 +655,21 @@ def botactions(bot):
                             ' debe ' + str("{0:.2f}".format(dicc_temp['listas'][message.chat.id][1][0][j])) + \
                             '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
                         dicc_temp['listas'][message.chat.id][0][0][i] += dicc_temp['listas'][message.chat.id][1][0][j] #Actualizo cantidad lista 1
-                        dicc_temp['listas'][message.chat.id][0][0][i] = round(dicc_temp['listas'][message.chat.id][0][0][i], 2) #Redondear float a 2 decimales
+                        dicc_temp['listas'][message.chat.id][0][0][i] = round(dicc_temp['listas'][message.chat.id][0][0][i], 2) #Redondear float anterior a 2 decimales
                         j += 1 #Solo aumento la j en este caso
                     else:
                         dicc_temp['listas'][message.chat.id][1][0][j] += dicc_temp['listas'][message.chat.id][0][0][i] #Actualizo cantidad lista 2
+                        dicc_temp['listas'][message.chat.id][1][0][j] = round(dicc_temp['listas'][message.chat.id][1][0][j], 2)
                         dicc_temp['listas'][message.chat.id][2] += \
                             dicc_temp['listas'][message.chat.id][1][1][j] + \
-                            ' debe ' + str("{0:.2f}".format(dicc_temp['listas'][message.chat.id][1][0][j])) + \
+                            ' debe ' + str("{0:.2f}".format(abs(dicc_temp['listas'][message.chat.id][0][0][i]))) + \
                             '€ a ' + dicc_temp['listas'][message.chat.id][0][1][i] + '\n'
-                        dicc_temp['listas'][message.chat.id][0][0][i] = 0 #Actualizo cantidad lista 1
+                        dicc_temp['listas'][message.chat.id][0][0][i] = 0 #Actualizo cantidad lista 1 para ayudar al while
 
             bot.send_message(message.chat.id, '<b>Lista de pagos a realizar entre vosotros para cuadrar las cuentas:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
             showButtons(bot, message.chat.id)
         else:
+            bot.send_message(message.chat.id, 'Introducida opción incorrecta.\nUtiliza los botones.')
             showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['▪️OCULTAR_BOTONES▪️'])
