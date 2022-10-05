@@ -10,6 +10,7 @@ with open('config.json', 'r') as file:  config = json.load(file)
 BOT_TOKEN = config['TOKEN']['PAmiGOSbot']
 DIRECTORIO_RAIZ = config['ROOT_PATH']
 
+WAIT_BUTTONS = (0.3)
 BOT_INTERVAL = 1
 BOT_TIMEOUT = 20
 
@@ -154,6 +155,7 @@ def botactions(bot):
         bot.register_next_step_handler(msg, crear_archivo)
 
     def crear_archivo(message):
+        sleep(WAIT_BUTTONS)
         path = createFilenameToPath(message)
         try:
             archivo = open(path, "x")
@@ -166,6 +168,7 @@ def botactions(bot):
             bot.send_message(message.chat.id, 'Evento <b>' + str(message.text) + '</b> creado!', parse_mode="html")
         except:
             bot.send_message(message.chat.id, 'Ya existe ese evento.')
+        sleep(WAIT_BUTTONS)
         showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['VEReventos'])
@@ -176,6 +179,7 @@ def botactions(bot):
             bot.send_message(message.chat.id, '<b>La lista de eventos es:</b>\n ' + '- ' + listado_lineas, parse_mode="html")
         else:
             bot.send_message(message.chat.id, '<b>La lista de eventos está vacia!</b>', parse_mode="html")
+        sleep(WAIT_BUTTONS)
         showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['BORRARevento'])
@@ -189,9 +193,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, dialogBorrarEvento)
         else:
             bot.send_message(message.chat.id, '<b>La lista de eventos está vacia.\nNada que borrar.</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
     
     def dialogBorrarEvento(message):
+        sleep(WAIT_BUTTONS)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
@@ -202,14 +208,17 @@ def botactions(bot):
             bot.register_next_step_handler(msg, borradoFinalEvento)
         else:
             bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
     
     def borradoFinalEvento(message):
+        sleep(WAIT_BUTTONS)
         if message.text == 'CONFIRMAR':
             path = filenameToPath(message)
             remove(path)
             bot.send_message(message.chat.id, 'Evento <b>' + dicc_temp['dicc_evento'][message.chat.id] + '</b> borrado!', parse_mode="html")
             del dicc_temp['dicc_evento'][message.chat.id]
+        sleep(WAIT_BUTTONS)
         showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
 
@@ -231,9 +240,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, nuevoAmigoEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos para añadir amigos.\nCrea primero un evento.</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
     
     def nuevoAmigoEvento(message):
+        sleep(WAIT_BUTTONS)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
@@ -245,9 +256,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, leerAmigo)
         else:
             bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def leerAmigo(message):
+        sleep(WAIT_BUTTONS)
         dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
         if message.text in dicc_data[message.chat.id]['amigos']:
             msg = bot.send_message(message.chat.id, '<b>Este nombre ya existe.\nIntroduce otro nombre:</b>', parse_mode="html")
@@ -261,12 +274,14 @@ def botactions(bot):
             bot.register_next_step_handler(msg, dialogAddAmigo)
 
     def dialogAddAmigo(message):
+        sleep(WAIT_BUTTONS)
         if message.text == 'SI':
             markup = ForceReply()
             msg = bot.send_message(message.chat.id, 'Introduce el nombre del amigo:', reply_markup=markup)
             bot.register_next_step_handler(msg, leerAmigo)
         else:
             saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands='VERamigos')
@@ -280,9 +295,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, verAmigosEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos para añadir amigos.\nCrea primero un evento.</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
 
     def verAmigosEvento(message):
+        sleep(WAIT_BUTTONS)
         dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
         path = filenameToPath(message)
         loadData(message.chat.id, path)
@@ -293,6 +310,7 @@ def botactions(bot):
             bot.send_message(message.chat.id, '<b>Lista de amigos:</b>\n ' + '- ' + listado_lineas, parse_mode="html")
         else:
             bot.send_message(message.chat.id, '<b>No hay ningún amigo en el evento!</b>', parse_mode="html")
+        sleep(WAIT_BUTTONS)
         showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands='BORRARamigo')
@@ -306,9 +324,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, borrarAmigosEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos para borrar amigos.\nCrea primero un evento.</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
 
     def borrarAmigosEvento(message):
+        sleep(WAIT_BUTTONS)
         lista_eventos = listar_eventos(message.chat.id)
         if message.text in lista_eventos:
             dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
@@ -324,12 +344,15 @@ def botactions(bot):
                 bot.register_next_step_handler(msg, dialogBorrarAmigo)
             else:
                 bot.send_message(message.chat.id, '<b>No hay amigos para borrar en este evento.</b>', parse_mode="html")
+                sleep(WAIT_BUTTONS)
                 showButtons(bot, message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def dialogBorrarAmigo(message):
+        sleep(WAIT_BUTTONS)
         #lista = listar_eventos(message.chat.id)
         #if (lista.find(message)) != -1:
         dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
@@ -340,10 +363,12 @@ def botactions(bot):
         bot.register_next_step_handler(msg, borradoFinalAmigo)
     
     def borradoFinalAmigo(message):
+        sleep(WAIT_BUTTONS)
         if message.text == 'CONFIRMAR':
             dicc_data[message.chat.id]['amigos'].remove(dicc_temp['dicc_amigo_temp'][message.chat.id]) #Elimina amigo de la lista
             bot.send_message(message.chat.id, 'Amigo <b>' + dicc_temp['dicc_amigo_temp'][message.chat.id] + '</b> borrado!', parse_mode="html")
             saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
+        sleep(WAIT_BUTTONS)
         showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
 
@@ -365,9 +390,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, nuevoGastoEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos para añadir gastos.\nCrea primero un evento.</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
 
     def nuevoGastoEvento(message):
+        sleep(WAIT_BUTTONS)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
@@ -385,12 +412,15 @@ def botactions(bot):
                 bot.register_next_step_handler(msg, leerPagadorPedirConcepto)
             else:
                 bot.send_message(message.chat.id, '<b>No hay ningún amigo en el evento!</b>', parse_mode="html")
+                sleep(WAIT_BUTTONS)
                 showButtons(bot, message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def leerPagadorPedirConcepto(message):
+        sleep(WAIT_BUTTONS)
         dicc_temp['dicc_gasto'][message.chat.id]['pagador'] = message.text
         dicc_temp['amigos'][message.chat.id].remove(message.text) #Elimino al pagador del listado de amigos a aparecer
         dicc_temp['dicc_gasto'][message.chat.id]['participantes'] = [message.text] #Añado el pagador a los participantes
@@ -399,12 +429,14 @@ def botactions(bot):
         bot.register_next_step_handler(msg, leerConceptoPedirCantidad)
 
     def leerConceptoPedirCantidad(message):
+        sleep(WAIT_BUTTONS)
         dicc_temp['dicc_gasto'][message.chat.id]['concepto'] = message.text
         markup = ForceReply()
         msg = bot.send_message(message.chat.id, 'Introduce la cantidad pagada:', reply_markup=markup)
         bot.register_next_step_handler(msg, leerCantidadPedirParticipantes)
 
     def leerCantidadPedirParticipantes(message):
+        sleep(WAIT_BUTTONS)
         cantidad = message.text.replace(',', '.')
         dicc_temp['dicc_gasto'][message.chat.id]['cantidad'] = cantidad
         if message.text.replace('.', '', 1).isdigit() or message.text.replace(',', '', 1).isdigit():
@@ -419,10 +451,12 @@ def botactions(bot):
             bot.register_next_step_handler(msg, leerCantidadPedirParticipantes) #Volvemos a ejecutar esta función
 
     def pedirParticipantesGuardarGasto(message):
+        sleep(WAIT_BUTTONS)
         if message.text == 'FIN 🔚':
             dicc_data[message.chat.id]['gastos'].append(dicc_temp['dicc_gasto'][message.chat.id])
             bot.send_message(message.chat.id, 'Gasto <b>' + dicc_temp['dicc_gasto'][message.chat.id]['concepto'] + '</b> añadido a ' + dicc_temp['dicc_evento'][message.chat.id] + '!', parse_mode="html")
             saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
         else:
             dicc_temp['dicc_gasto'][message.chat.id]['participantes'].append(message.text)
@@ -444,9 +478,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, verGastosEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos.\nCrea primero un evento.</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
 
     def verGastosEvento(message):
+        sleep(WAIT_BUTTONS)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
@@ -468,9 +504,11 @@ def botactions(bot):
                 bot.send_message(message.chat.id, '<b>Lista de gastos:</b>\n\n' + texto, parse_mode="html")
             else:
                 bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     @bot.message_handler(commands='BORRARgasto')
@@ -484,9 +522,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, borrarGastoEvento)
         else:
             bot.send_message(message.chat.id, '<b>No hay eventos.\nCrea primero un evento.</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
     
     def borrarGastoEvento(message):
+        sleep(WAIT_BUTTONS)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text #Hay que añadir esta línea para que en la ruta del archivo se sepa el evento.
@@ -514,12 +554,15 @@ def botactions(bot):
                 bot.register_next_step_handler(msg, dialogBorrarGasto)
             else:
                 bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
+                sleep(WAIT_BUTTONS)
                 showButtons(bot, message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def dialogBorrarGasto(message):
+        sleep(WAIT_BUTTONS)
         dicc_temp['num_gasto_borrar'][message.chat.id] = message.text
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
         markup.row('CONFIRMAR')
@@ -528,10 +571,12 @@ def botactions(bot):
         bot.register_next_step_handler(msg, borradoFinalGasto)
 
     def borradoFinalGasto(message):
+        sleep(WAIT_BUTTONS)
         if message.text == 'CONFIRMAR':
             dicc_data[message.chat.id]['gastos'].pop(int(dicc_temp['num_gasto_borrar'][message.chat.id])-1)
             bot.send_message(message.chat.id, 'Gasto <b>nº' + dicc_temp['num_gasto_borrar'][message.chat.id] + '</b> borrado!', parse_mode="html")            
             saveData(message.chat.id, dicc_temp['dicc_path'][message.chat.id]) #Lo guardo en el archivo
+        sleep(WAIT_BUTTONS)
         showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
 
@@ -546,9 +591,11 @@ def botactions(bot):
             bot.register_next_step_handler(msg, dialogCalcular)
         else:
             msg = bot.send_message(message.chat.id, '<b>No hay eventos para calcular.\nCrea primero un evento.</b>', parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
 
     def dialogCalcular(message):
+        sleep(WAIT_BUTTONS)
         lista = listar_eventos(message.chat.id)
         if message.text in lista:
             dicc_temp['dicc_evento'][message.chat.id] = message.text
@@ -564,12 +611,15 @@ def botactions(bot):
                 bot.register_next_step_handler(msg, calcular)
             else:      
                 bot.send_message(message.chat.id, '<b>No hay ningún gasto en el evento!</b>', parse_mode="html")
+                sleep(WAIT_BUTTONS)
                 showButtons(bot, message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Introducido nombre de evento incorrecto.\nUtiliza los botones.')
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea  
 
     def calcular(message):
+        sleep(WAIT_BUTTONS)
         loadData(message.chat.id, dicc_temp['dicc_path'][message.chat.id])
 
         dicc_temp['calculo'][message.chat.id] = {}
@@ -606,6 +656,7 @@ def botactions(bot):
             for amigo in dicc_temp['calculo'][message.chat.id]:
                 dicc_temp['listas'][message.chat.id][2] += '- ' + amigo + ': ' + str(dicc_temp['calculo'][message.chat.id][amigo]['diff']) + '€\n'
             bot.send_message(message.chat.id, '<b>El saldo de cada amigo es:\n(Negativo) -> </b> le deben dinero.\n<b>(Positivo) -> </b> tiene que pagar.\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
         elif message.text == 'PAGOS':
             j = 0
@@ -628,8 +679,10 @@ def botactions(bot):
                         dicc_temp['listas'][message.chat.id][0][0][i] = 0 #Actualizo cantidad lista 1
 
             bot.send_message(message.chat.id, '<b>Lista de pagos a realizar entre vosotros para cuadrar las cuentas:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
         else:
+            sleep(WAIT_BUTTONS)
             showButtons(bot, message.chat.id)
 
     @bot.message_handler(commands=['▪️OCULTAR_BOTONES▪️'])
