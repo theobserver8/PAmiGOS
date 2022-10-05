@@ -10,7 +10,8 @@ with open('config.json', 'r') as file:  config = json.load(file)
 BOT_TOKEN = config['TOKEN']['PAmiGOSbot']
 DIRECTORIO_RAIZ = config['ROOT_PATH']
 
-WAIT_BUTTONS = (0.3)
+WAIT_BUTTONS = 0.2
+WAIT_MENU = 0.1
 BOT_INTERVAL = 1
 BOT_TIMEOUT = 20
 
@@ -126,12 +127,14 @@ def botactions(bot):
 
     @bot.message_handler(commands=['☕️KO-FI☕️'])
     def cmd_kofi(message):
+        sleep(WAIT_MENU)
         texto = 'Si te ha gustado mi bot y te resulta útil, ayudando con un café contribuirás al mantenimiento y desarrollo de PAmiGOS.\n'
         texto += '<a href= "https://ko-fi.com/theobserver8">https://ko-fi.com/theobserver8</a>'
         bot.send_message(message.chat.id, texto, parse_mode="html")
 
     @bot.message_handler(commands=['AYUDA❓'])
     def cmd_help(message):
+        sleep(WAIT_MENU)
         botones = ReplyKeyboardRemove()
         texto = '<b>📝 <u>EVENTO</u> 📝</b>: Nombre del evento organizado.\nEjemplo: Madrid.'
         texto += '\n\n<b>🚶🏼‍♂️ <u>AMIGOS</u> 🚶🏻‍♀️</b>: Amigos que forman parte de ese evento. Añade tantos como desees, escribiendo su nombre directamente.'
@@ -143,6 +146,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['📝EVENTO📝'])
     def cmd_evento(message):
+        sleep(WAIT_MENU)
         botones = ReplyKeyboardMarkup(resize_keyboard=True)
         botones.row('/NUEVOevento', '/VEReventos')
         botones.row('/BORRARevento', '/CANCELAR')
@@ -150,6 +154,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['NUEVOevento'])
     def cmd_nuevoEvento(message):
+        sleep(WAIT_MENU)
         markup = ForceReply()
         msg = bot.send_message(message.chat.id, 'Vas a crear un nuevo evento.\nIntroduce el nombre:', reply_markup=markup)
         bot.register_next_step_handler(msg, crear_archivo)
@@ -173,6 +178,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['VEReventos'])
     def cmd_verEventos(message):
+        sleep(WAIT_MENU)
         listado = listar_eventos(message.chat.id)
         if len(listado):
             listado_lineas = ('\n - '.join(listado)) #Listado separado en líneas
@@ -184,6 +190,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['BORRARevento'])
     def cmd_borrarEvento(message):
+        sleep(WAIT_MENU)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -224,6 +231,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['🚶🏼‍♂️AMIGOS🚶🏻‍♀️'])
     def cmd_amigos(message):
+        sleep(WAIT_MENU)
         botones = ReplyKeyboardMarkup(resize_keyboard=True)
         botones.row('/NUEVOamigo', '/VERamigos')
         botones.row('/BORRARamigo', '/CANCELAR')
@@ -231,6 +239,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='NUEVOamigo')
     def cmd_nuevoAmigo(message):
+        sleep(WAIT_MENU)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -260,7 +269,6 @@ def botactions(bot):
             showButtons(bot, message.chat.id) #Los botones se van a mostrar luego sea la opción que sea
 
     def leerAmigo(message):
-        sleep(WAIT_BUTTONS)
         dicc_temp['dicc_amigo_temp'][message.chat.id] = message.text
         if message.text in dicc_data[message.chat.id]['amigos']:
             msg = bot.send_message(message.chat.id, '<b>Este nombre ya existe.\nIntroduce otro nombre:</b>', parse_mode="html")
@@ -286,6 +294,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='VERamigos')
     def cmd_verAmigos(message):
+        sleep(WAIT_MENU)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -315,6 +324,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='BORRARamigo')
     def cmd_borrarAmigo(message):
+        sleep(WAIT_MENU)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -374,6 +384,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['💰GASTOS💰'])
     def cmd_gastos(message):
+        sleep(WAIT_MENU)
         botones = ReplyKeyboardMarkup(resize_keyboard=True)
         botones.row('/NUEVOgasto', '/VERgastos')
         botones.row('/BORRARgasto', '/CANCELAR')
@@ -381,6 +392,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='NUEVOgasto')
     def cmd_nuevoGasto(message):
+        sleep(WAIT_MENU)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -451,7 +463,6 @@ def botactions(bot):
             bot.register_next_step_handler(msg, leerCantidadPedirParticipantes) #Volvemos a ejecutar esta función
 
     def pedirParticipantesGuardarGasto(message):
-        sleep(WAIT_BUTTONS)
         if message.text == 'FIN 🔚':
             dicc_data[message.chat.id]['gastos'].append(dicc_temp['dicc_gasto'][message.chat.id])
             bot.send_message(message.chat.id, 'Gasto <b>' + dicc_temp['dicc_gasto'][message.chat.id]['concepto'] + '</b> añadido a ' + dicc_temp['dicc_evento'][message.chat.id] + '!', parse_mode="html")
@@ -469,6 +480,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='VERgastos')
     def cmd_verGastos(message):
+        sleep(WAIT_MENU)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -513,6 +525,7 @@ def botactions(bot):
 
     @bot.message_handler(commands='BORRARgasto')
     def cmd_borrarGasto(message):
+        sleep(WAIT_MENU)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -582,6 +595,7 @@ def botactions(bot):
 
     @bot.message_handler(commands=['💶CALCULAR💶'])
     def cmd_calcular(message):
+        sleep(WAIT_MENU)
         lista = listar_eventos(message.chat.id)
         if len(lista):
             eventos = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -631,7 +645,7 @@ def botactions(bot):
 
         #Calculo lo debido y lo pagado
         for gasto in dicc_data[message.chat.id]['gastos']:
-            dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += int(gasto['cantidad']) #Actualizo todo lo pagado
+            dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += float(gasto['cantidad']) #Actualizo todo lo pagado
             for participante in gasto['participantes']:
                 dicc_temp['calculo'][message.chat.id][participante]['debido'] += float(gasto['cantidad'])/(len(gasto['participantes'])) #Actualizo todo lo debido
 
