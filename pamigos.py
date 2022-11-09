@@ -412,8 +412,8 @@ def botactions(bot):
     def leerPagadorPedirConcepto(message):
         sleep(WAIT_NAVEGACION)
         dicc_temp['dicc_gasto'][message.chat.id]['pagador'] = message.text
-        dicc_temp['amigos'][message.chat.id].remove(message.text) #Elimino al pagador del listado de amigos a aparecer
-        dicc_temp['dicc_gasto'][message.chat.id]['participantes'] = [message.text] #Añado el pagador a los participantes
+        #dicc_temp['amigos'][message.chat.id].remove(message.text) #Elimino al pagador del listado de amigos a aparecer
+        dicc_temp['dicc_gasto'][message.chat.id]['participantes'] = [] #Creo lista vacia de participantes
         markup = ForceReply()
         msg = bot.send_message(message.chat.id, 'Introduce el concepto del gasto:', reply_markup=markup)
         bot.register_next_step_handler(msg, leerConceptoPedirCantidad)
@@ -614,14 +614,15 @@ def botactions(bot):
             dicc_temp['calculo'][message.chat.id][amigo]['pagado'] = 0  #Iniciamos a cero las cuentas
             dicc_temp['calculo'][message.chat.id][amigo]['debido'] = 0
             dicc_temp['calculo'][message.chat.id][amigo]['diff'] = 0
-            prueba = 0
 
         #Calculo lo debido y lo pagado
         for gasto in dicc_data[message.chat.id]['gastos']:
             #Hay que hacer la movida por los decimales. Ej. 23.75 entre 3 da 7.91666 que es 7.92. Vuelvo a multiplicar y redondeo para que cuadre con 23.76
-            dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += round(round(float(gasto['cantidad'])/(len(gasto['participantes'])), 2) * len(gasto['participantes']), 2) #Actualizo todo lo pagado
+            dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] += round(float(gasto['cantidad'])/(len(gasto['participantes'])), 2) * len(gasto['participantes']) #Actualizo todo lo pagado
+            dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado'] = round((dicc_temp['calculo'][message.chat.id][gasto['pagador']]['pagado']), 2)
             for participante in gasto['participantes']:
-                dicc_temp['calculo'][message.chat.id][participante]['debido'] += round(float(gasto['cantidad'])/(len(gasto['participantes'])), 2) #Actualizo todo lo debido
+                dicc_temp['calculo'][message.chat.id][participante]['debido'] += float(gasto['cantidad'])/(len(gasto['participantes'])) #Actualizo todo lo debido
+                dicc_temp['calculo'][message.chat.id][participante]['debido'] = round((dicc_temp['calculo'][message.chat.id][participante]['debido']), 2)
 
         dicc_temp['listas'][message.chat.id] = [[[], []], [[], []], ''] #Inicializamos listas    
         #0 RECIBIR, 1 PAGAR, 2 TEXTO SEGUNDA LISTA (EL DE LA PRIMERA LO VOY SACANDO DEL FOR)
@@ -667,6 +668,8 @@ def botactions(bot):
                         dicc_temp['listas'][message.chat.id][0][0][i] = 0 #Actualizo cantidad lista 1 para ayudar al while
 
             bot.send_message(message.chat.id, '<b>Lista de pagos a realizar entre vosotros para cuadrar las cuentas:</b>\n\n' + dicc_temp['listas'][message.chat.id][2], parse_mode="html")
+            showButtons(bot, message.chat.id)
+        elif message.text == '/CANCELAR':
             showButtons(bot, message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Introducida opción incorrecta.\nUtiliza los botones.')
